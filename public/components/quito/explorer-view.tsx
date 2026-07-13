@@ -58,7 +58,7 @@ export function ExplorerView() {
       </section>
 
       {/* Split: rich list + logs */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
         <RichList />
         <NetworkLogs />
       </div>
@@ -122,14 +122,14 @@ function RichList() {
 function NetworkLogs() {
   const [logs, setLogs] = useState<LogLine[]>([])
   const idRef = useRef(0)
-  const endRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const push = () => {
       const t = LOG_TEMPLATES[Math.floor(Math.random() * LOG_TEMPLATES.length)]
       setLogs((prev) => {
         const next = [...prev, { id: idRef.current++, time: nowTime(), text: t.text(), kind: t.kind }]
-        return next.slice(-40)
+        return next.slice(-60)
       })
     }
     push()
@@ -138,12 +138,14 @@ function NetworkLogs() {
   }, [])
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" })
+    // Scroll only the log container to the bottom — never the page.
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [logs])
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-black/50">
-      <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-3">
+    <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-black/50">
+      <div className="flex shrink-0 items-center gap-2 border-b border-zinc-800 px-4 py-3">
         <span className="relative flex size-2.5">
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400/70" />
           <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400" />
@@ -153,7 +155,7 @@ function NetworkLogs() {
           websocket · live
         </span>
       </div>
-      <div className="h-72 overflow-y-auto p-4 font-mono text-xs leading-relaxed">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed">
         {logs.map((l) => (
           <div key={l.id} className="flex gap-2">
             <span className="shrink-0 text-zinc-600">[{l.time}]</span>
@@ -170,7 +172,6 @@ function NetworkLogs() {
             </span>
           </div>
         ))}
-        <div ref={endRef} />
       </div>
     </div>
   )

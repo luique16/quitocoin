@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Send, Boxes, Pickaxe, LogOut } from "lucide-react"
+import { LayoutDashboard, Send, Boxes, Pickaxe, LogOut, UserCog } from "lucide-react"
 import type { View } from "@/lib/quito-data"
 import { QuitoWordmark } from "./logo"
 
@@ -9,6 +9,7 @@ const NAV: { id: View; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "transfer", label: "Transferir", icon: Send },
   { id: "explorer", label: "Explorer", icon: Boxes },
   { id: "mining", label: "Mineração", icon: Pickaxe },
+  { id: "account", label: "Conta", icon: UserCog },
 ]
 
 export function Sidebar({

@@ -1,4 +1,4 @@
-export type View = "auth" | "dashboard" | "transfer" | "explorer" | "mining"
+export type View = "auth" | "dashboard" | "transfer" | "explorer" | "mining" | "account"
 
 export type TxStatus = "pending" | "completed"
 export type TxDirection = "received" | "sent"

@@ -7,6 +7,7 @@ import { DashboardView } from "@/components/quito/dashboard-view"
 import { TransferView } from "@/components/quito/transfer-view"
 import { ExplorerView } from "@/components/quito/explorer-view"
 import { MiningView } from "@/components/quito/mining-view"
+import { AccountView } from "@/components/quito/account-view"
 import { MobileNav, Sidebar } from "@/components/quito/sidebar"
 
 export default function Page() {
@@ -25,6 +26,7 @@ export default function Page() {
         {view === "transfer" && <TransferView />}
         {view === "explorer" && <ExplorerView />}
         {view === "mining" && <MiningView />}
+        {view === "account" && <AccountView onLogout={() => setView("auth")} />}
       </main>
     </div>
   )
