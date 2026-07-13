@@ -32,17 +32,19 @@ func main() {
 
 	hasher := provider.NewPasswordHasher()
 	idGen := provider.NewIdGenerator()
+	jwtProvider := provider.NewJWTProvider(cfg.JWTSecret)
 
 	repo := user.NewRepository(client)
-	user_service := user.NewService(repo, hasher, idGen)
+	userService := user.NewService(repo, hasher, idGen)
 
-	createUserUC := usecase.NewCreateUserUseCase(user_service)
-	getUserUC := usecase.NewGetUserUseCase(user_service)
-	listUsersUC := usecase.NewListUsersUseCase(user_service)
-	updateUserUC := usecase.NewUpdateUserUseCase(user_service)
-	deleteUserUC := usecase.NewDeleteUserUseCase(user_service)
+	registerUC := usecase.NewRegisterUseCase(userService, jwtProvider)
+	loginUC := usecase.NewLoginUseCase(repo, hasher, jwtProvider)
+	getUserUC := usecase.NewGetUserUseCase(userService)
+	listUsersUC := usecase.NewListUsersUseCase(userService)
+	updateUserUC := usecase.NewUpdateUserUseCase(userService)
+	deleteUserUC := usecase.NewDeleteUserUseCase(userService)
 
-	router := handler.NewRouter(createUserUC, getUserUC, listUsersUC, updateUserUC, deleteUserUC)
+	router := handler.NewRouter(registerUC, loginUC, getUserUC, listUsersUC, updateUserUC, deleteUserUC, jwtProvider)
 
 	log.Printf("server running on :%s", cfg.ServerPort)
 	if err := router.Run(":" + cfg.ServerPort); err != nil {

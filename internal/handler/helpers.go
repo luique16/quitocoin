@@ -29,17 +29,19 @@ func toUserResponse(u *ent.User) userResponse {
 
 func mapError(err error) int {
 	switch {
-		case errors.Is(err, errorpkg.ErrNameRequired),
-			errors.Is(err, errorpkg.ErrEmailRequired),
-			errors.Is(err, errorpkg.ErrInvalidEmail),
-			errors.Is(err, errorpkg.ErrPasswordRequired),
-			errors.Is(err, errorpkg.ErrInvalidID):
-			return http.StatusBadRequest
-		case errors.Is(err, errorpkg.ErrUserNotFound):
-			return http.StatusNotFound
-		case errors.Is(err, errorpkg.ErrEmailExists):
-			return http.StatusConflict
-		default:
-			return http.StatusInternalServerError
+	case errors.Is(err, errorpkg.ErrNameRequired),
+		errors.Is(err, errorpkg.ErrEmailRequired),
+		errors.Is(err, errorpkg.ErrInvalidEmail),
+		errors.Is(err, errorpkg.ErrPasswordRequired),
+		errors.Is(err, errorpkg.ErrInvalidID):
+		return http.StatusBadRequest
+	case errors.Is(err, errorpkg.ErrInvalidCredentials):
+		return http.StatusUnauthorized
+	case errors.Is(err, errorpkg.ErrUserNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, errorpkg.ErrEmailExists):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
 	}
 }

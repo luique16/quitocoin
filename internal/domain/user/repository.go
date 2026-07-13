@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/luique16/quitocoin/ent"
+	entuser "github.com/luique16/quitocoin/ent/user"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
 )
 
 type Repository interface {
 	Create(ctx context.Context, u *ent.User) (*ent.User, error)
 	Get(ctx context.Context, id string) (*ent.User, error)
+	GetByEmail(ctx context.Context, email string) (*ent.User, error)
 	List(ctx context.Context) ([]*ent.User, error)
 	Update(ctx context.Context, u *ent.User) (*ent.User, error)
 	Delete(ctx context.Context, id string) error
@@ -43,6 +45,17 @@ func (r *repo) Create(ctx context.Context, u *ent.User) (*ent.User, error) {
 
 func (r *repo) Get(ctx context.Context, id string) (*ent.User, error) {
 	u, err := r.client.User.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errorpkg.ErrUserNotFound
+		}
+		return nil, errorpkg.ErrInternal
+	}
+	return u, nil
+}
+
+func (r *repo) GetByEmail(ctx context.Context, email string) (*ent.User, error) {
+	u, err := r.client.User.Query().Where(entuser.Email(email)).Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errorpkg.ErrUserNotFound
