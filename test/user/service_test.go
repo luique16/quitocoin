@@ -15,7 +15,7 @@ import (
 )
 
 func newService(repo user.Repository) user.Service {
-	return user.NewService(repo, provider.NewPasswordHasher(), provider.NewUUIDGenerator())
+	return user.NewService(repo, provider.NewPasswordHasher(), provider.NewIdGenerator())
 }
 
 // -- assertion helpers ---------------------------------------------------
@@ -637,6 +637,42 @@ func TestUpdate_EmailConflict(t *testing.T) {
 
 	assertErrorIs(t, err, errorpkg.ErrEmailExists)
 	assertNil(t, result)
+}
+
+func TestUpdate_InvalidEmail(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+
+	existing := makeUser()
+
+	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
+		return existing, nil
+	}
+
+	invalidEmails := []struct {
+		name  string
+		email string
+	}{
+		{"missing @", "invalid-email"},
+		{"missing domain", "user@"},
+		{"missing local", "@domain.com"},
+		{"double @", "user@@domain.com"},
+		{"spaces", "user @domain.com"},
+		{"empty string", ""},
+	}
+
+	for _, tt := range invalidEmails {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := svc.Update(ctx, existing.ID, user.UpdateUserInput{
+				Email: strPtr(tt.email),
+			})
+			assertError(t, err)
+			assertNil(t, result)
+		})
+	}
+
+	assertEqual(t, 0, repo.UpdateCallCount())
 }
 
 // -- Delete tests --------------------------------------------------------

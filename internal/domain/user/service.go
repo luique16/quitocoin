@@ -106,6 +106,9 @@ func (s *service) Update(ctx context.Context, id string, input UpdateUserInput) 
 		merged.Name = *input.Name
 	}
 	if input.Email != nil {
+		if *input.Email == "" || !isValidEmail(*input.Email) {
+			return nil, errorpkg.ErrInvalidEmail
+		}
 		merged.Email = *input.Email
 	}
 	if input.Password != nil {
