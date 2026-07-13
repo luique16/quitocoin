@@ -38,7 +38,7 @@ func (s *service) Create(ctx context.Context, input CreateUserInput) (*ent.User,
 	}
 
 	id := s.idGen.Generate()
-	public_id := s.idGen.Generate()
+	public_id := s.idGen.GeneratePublic()
 	hashed, err := s.hasher.Hash(input.Password)
 	if err != nil {
 		return nil, errorpkg.ErrInternal
