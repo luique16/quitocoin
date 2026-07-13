@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -210,7 +209,7 @@ func TestCreate_EmailAlreadyExists(t *testing.T) {
 	}
 
 	result, err := svc.Create(ctx, user.CreateUserInput{
-		Name: "John Doe", Email: "existing@example.com", Password: "pass123",
+		Name: "John Doe", Email: "existing@example.com", Password: "StrongP@ss1",
 	})
 
 	assertErrorIs(t, err, errorpkg.ErrEmailExists)
@@ -228,7 +227,7 @@ func TestCreate_RepositoryError(t *testing.T) {
 	}
 
 	result, err := svc.Create(ctx, user.CreateUserInput{
-		Name: "John Doe", Email: "john@example.com", Password: "pass123",
+		Name: "John Doe", Email: "john@example.com", Password: "StrongP@ss1",
 	})
 
 	assertErrorIs(t, err, errorpkg.ErrInternal)
@@ -293,6 +292,35 @@ func TestCreate_InvalidEmail(t *testing.T) {
 				Name: "John Doe", Email: tt.email, Password: "pass123",
 			})
 			assertError(t, err)
+		})
+	}
+
+	assertEqual(t, 0, repo.CreateCallCount())
+}
+
+func TestCreate_WeakPassword(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+
+	weakPasswords := []struct {
+		name string
+		pwd  string
+	}{
+		{"too short", "Ab1!"},
+		{"no uppercase", "abcdef1!"},
+		{"no lowercase", "ABCDEF1!"},
+		{"no digit", "Abcdefgh!"},
+		{"no special char", "Abcdefgh1"},
+		{"lowercase only", "abcdefgh"},
+		{"spaces only", "        "},
+	}
+
+	for _, tt := range weakPasswords {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := svc.Create(context.Background(), user.CreateUserInput{
+				Name: "John Doe", Email: "john@example.com", Password: tt.pwd,
+			})
+			assertErrorIs(t, err, errorpkg.ErrWeakPassword)
 		})
 	}
 
@@ -449,7 +477,7 @@ func TestUpdate_Success(t *testing.T) {
 		assertEqual(t, existing.ID, u.ID)
 		assertEqual(t, "Jane Updated", u.Name)
 		assertEqual(t, "jane.updated@example.com", u.Email)
-		assertTrue(t, !strings.HasPrefix(u.Password, "newPass456!"), "password must be hashed")
+		assertEqual(t, existing.Password, u.Password)
 		return makeUser(func(u2 *ent.User) {
 			u2.ID = existing.ID
 			u2.Name = "Jane Updated"
@@ -458,9 +486,8 @@ func TestUpdate_Success(t *testing.T) {
 	}
 
 	result, err := svc.Update(ctx, existing.ID, user.UpdateUserInput{
-		Name:     strPtr("Jane Updated"),
-		Email:    strPtr("jane.updated@example.com"),
-		Password: strPtr("newPass456!"),
+		Name:  strPtr("Jane Updated"),
+		Email: strPtr("jane.updated@example.com"),
 	})
 
 	assertNoError(t, err)
@@ -526,38 +553,8 @@ func TestUpdate_PartialEmail(t *testing.T) {
 	})
 
 	assertNoError(t, err)
-	assertEqual(t, existing.Name, result.Name)
+		assertEqual(t, existing.Name, result.Name)
 	assertEqual(t, "new.email@example.com", result.Email)
-}
-
-func TestUpdate_PartialPassword(t *testing.T) {
-	repo := NewMockRepository()
-	svc := newService(repo)
-	ctx := context.Background()
-
-	existing := makeUser()
-
-	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
-		return existing, nil
-	}
-
-	repo.UpdateFn = func(_ context.Context, u *ent.User) (*ent.User, error) {
-		assertEqual(t, existing.ID, u.ID)
-		assertEqual(t, existing.Name, u.Name)
-		assertEqual(t, existing.Email, u.Email)
-		assertTrue(t, !strings.HasPrefix(u.Password, "newPass456!"), "password must be re-hashed")
-		assertTrue(t, u.Password != existing.Password, "password must change")
-		return makeUser(func(u2 *ent.User) {
-			u2.Password = "$2a$10$newhashedpassword"
-		}), nil
-	}
-
-	result, err := svc.Update(ctx, existing.ID, user.UpdateUserInput{
-		Password: strPtr("newPass456!"),
-	})
-
-	assertNoError(t, err)
-	assertTrue(t, result.Password != "", "password must be returned")
 }
 
 func TestUpdate_NotFound(t *testing.T) {
@@ -673,6 +670,161 @@ func TestUpdate_InvalidEmail(t *testing.T) {
 	}
 
 	assertEqual(t, 0, repo.UpdateCallCount())
+}
+
+// -- UpdatePassword tests ------------------------------------------------
+
+func TestUpdatePassword_Success(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+	hasher := provider.NewPasswordHasher()
+
+	existing := makeUser()
+	oldHash, _ := hasher.Hash("OldPass123!")
+	existing.Password = oldHash
+
+	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
+		assertEqual(t, existing.ID, id)
+		return existing, nil
+	}
+
+	repo.UpdateFn = func(_ context.Context, u *ent.User) (*ent.User, error) {
+		assertEqual(t, existing.ID, u.ID)
+		assertTrue(t, u.Password != oldHash, "password must change")
+		assertTrue(t, hasher.Compare("NewStr0ng!", u.Password) == nil, "new password must be hashed correctly")
+		existing.Password = u.Password
+		return existing, nil
+	}
+
+	err := svc.UpdatePassword(ctx, existing.ID, user.UpdatePasswordInput{
+		OldPassword: "OldPass123!",
+		NewPassword: "NewStr0ng!",
+	})
+
+	assertNoError(t, err)
+	assertEqual(t, 1, repo.GetCallCount())
+	assertEqual(t, 1, repo.UpdateCallCount())
+}
+
+func TestUpdatePassword_InvalidOldPassword(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+	hasher := provider.NewPasswordHasher()
+
+	existing := makeUser()
+	existing.Password, _ = hasher.Hash("OldPass123!")
+
+	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
+		return existing, nil
+	}
+
+	err := svc.UpdatePassword(ctx, existing.ID, user.UpdatePasswordInput{
+		OldPassword: "WrongOldPass!",
+		NewPassword: "NewStr0ng!",
+	})
+
+	assertErrorIs(t, err, errorpkg.ErrIncorrectPassword)
+	assertEqual(t, 1, repo.GetCallCount())
+	assertEqual(t, 0, repo.UpdateCallCount())
+}
+
+func TestUpdatePassword_WeakNewPassword(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+	hasher := provider.NewPasswordHasher()
+
+	existing := makeUser()
+	existing.Password, _ = hasher.Hash("OldPass123!")
+
+	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
+		return existing, nil
+	}
+
+	weakPasswords := []struct {
+		name string
+		pwd  string
+	}{
+		{"too short", "Ab1!"},
+		{"no uppercase", "abcdef1!"},
+		{"no lowercase", "ABCDEF1!"},
+		{"no digit", "Abcdefgh!"},
+		{"no special char", "Abcdefgh1"},
+	}
+
+	for _, tt := range weakPasswords {
+		t.Run(tt.name, func(t *testing.T) {
+			err := svc.UpdatePassword(ctx, existing.ID, user.UpdatePasswordInput{
+				OldPassword: "OldPass123!",
+				NewPassword: tt.pwd,
+			})
+			assertErrorIs(t, err, errorpkg.ErrWeakPassword)
+		})
+	}
+
+	assertEqual(t, 0, repo.UpdateCallCount())
+}
+
+func TestUpdatePassword_EmptyID(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+
+	err := svc.UpdatePassword(context.Background(), "", user.UpdatePasswordInput{
+		OldPassword: "OldPass123!",
+		NewPassword: "NewStr0ng!",
+	})
+
+	assertError(t, err)
+	assertEqual(t, 0, repo.GetCallCount())
+	assertEqual(t, 0, repo.UpdateCallCount())
+}
+
+func TestUpdatePassword_NotFound(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+
+	repo.GetFn = func(_ context.Context, _ string) (*ent.User, error) {
+		return nil, errorpkg.ErrUserNotFound
+	}
+
+	err := svc.UpdatePassword(ctx, "nonexistent-id", user.UpdatePasswordInput{
+		OldPassword: "OldPass123!",
+		NewPassword: "NewStr0ng!",
+	})
+
+	assertErrorIs(t, err, errorpkg.ErrUserNotFound)
+	assertEqual(t, 1, repo.GetCallCount())
+	assertEqual(t, 0, repo.UpdateCallCount())
+}
+
+func TestUpdatePassword_RepositoryError(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+	hasher := provider.NewPasswordHasher()
+
+	existing := makeUser()
+	existing.Password, _ = hasher.Hash("OldPass123!")
+
+	repo.GetFn = func(_ context.Context, id string) (*ent.User, error) {
+		return existing, nil
+	}
+
+	repo.UpdateFn = func(_ context.Context, _ *ent.User) (*ent.User, error) {
+		return nil, errorpkg.ErrInternal
+	}
+
+	err := svc.UpdatePassword(ctx, existing.ID, user.UpdatePasswordInput{
+		OldPassword: "OldPass123!",
+		NewPassword: "NewStr0ng!",
+	})
+
+	assertErrorIs(t, err, errorpkg.ErrInternal)
+	assertEqual(t, 1, repo.GetCallCount())
+	assertEqual(t, 1, repo.UpdateCallCount())
 }
 
 // -- Delete tests --------------------------------------------------------

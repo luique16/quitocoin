@@ -33,9 +33,11 @@ func mapError(err error) int {
 		errors.Is(err, errorpkg.ErrEmailRequired),
 		errors.Is(err, errorpkg.ErrInvalidEmail),
 		errors.Is(err, errorpkg.ErrPasswordRequired),
+		errors.Is(err, errorpkg.ErrWeakPassword),
 		errors.Is(err, errorpkg.ErrInvalidID):
 		return http.StatusBadRequest
-	case errors.Is(err, errorpkg.ErrInvalidCredentials):
+	case errors.Is(err, errorpkg.ErrInvalidCredentials),
+		errors.Is(err, errorpkg.ErrIncorrectPassword):
 		return http.StatusUnauthorized
 	case errors.Is(err, errorpkg.ErrUserNotFound):
 		return http.StatusNotFound

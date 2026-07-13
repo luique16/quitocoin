@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/luique16/quitocoin/ent"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
@@ -15,6 +16,7 @@ type Service interface {
 	Get(ctx context.Context, id string) (*ent.User, error)
 	List(ctx context.Context) ([]*ent.User, error)
 	Update(ctx context.Context, id string, input UpdateUserInput) (*ent.User, error)
+	UpdatePassword(ctx context.Context, id string, input UpdatePasswordInput) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -111,13 +113,6 @@ func (s *service) Update(ctx context.Context, id string, input UpdateUserInput) 
 		}
 		merged.Email = *input.Email
 	}
-	if input.Password != nil {
-		hashed, err := s.hasher.Hash(*input.Password)
-		if err != nil {
-			return nil, errorpkg.ErrInternal
-		}
-		merged.Password = hashed
-	}
 
 	updated, err := s.repo.Update(ctx, merged)
 	if err != nil {
@@ -125,6 +120,37 @@ func (s *service) Update(ctx context.Context, id string, input UpdateUserInput) 
 	}
 
 	return updated, nil
+}
+
+func (s *service) UpdatePassword(ctx context.Context, id string, input UpdatePasswordInput) error {
+	if id == "" {
+		return errorpkg.ErrInvalidID
+	}
+	if input.OldPassword == "" || input.NewPassword == "" {
+		return errorpkg.ErrPasswordRequired
+	}
+
+	u, err := s.repo.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := s.hasher.Compare(input.OldPassword, u.Password); err != nil {
+		return errorpkg.ErrIncorrectPassword
+	}
+
+	if !isStrongPassword(input.NewPassword) {
+		return errorpkg.ErrWeakPassword
+	}
+
+	hashed, err := s.hasher.Hash(input.NewPassword)
+	if err != nil {
+		return errorpkg.ErrInternal
+	}
+
+	u.Password = hashed
+	_, err = s.repo.Update(ctx, u)
+	return err
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -162,7 +188,33 @@ func validateCreate(input CreateUserInput) error {
 		return errorpkg.ErrPasswordRequired
 	}
 
+	if !isStrongPassword(input.Password) {
+		return errorpkg.ErrWeakPassword
+	}
+
 	return nil
+}
+
+func isStrongPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for _, ch := range password {
+		switch {
+		case unicode.IsUpper(ch):
+			hasUpper = true
+		case unicode.IsLower(ch):
+			hasLower = true
+		case unicode.IsDigit(ch):
+			hasDigit = true
+		case unicode.IsPunct(ch) || unicode.IsSymbol(ch):
+			hasSpecial = true
+		}
+	}
+
+	return hasUpper && hasLower && hasDigit && hasSpecial
 }
 
 func isValidEmail(email string) bool {

@@ -41,9 +41,10 @@ func main() {
 	loginUC := usecase.NewLoginUseCase(repo, hasher, jwtProvider)
 	getMeUC := usecase.NewGetUserUseCase(userService)
 	updateMeUC := usecase.NewUpdateUserUseCase(userService)
+	updatePasswordUC := usecase.NewUpdatePasswordUseCase(userService)
 	deleteMeUC := usecase.NewDeleteUserUseCase(userService)
 
-	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, deleteMeUC, jwtProvider)
+	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, updatePasswordUC, deleteMeUC, jwtProvider)
 
 	log.Printf("server running on :%s", cfg.ServerPort)
 	if err := router.Run(":" + cfg.ServerPort); err != nil {

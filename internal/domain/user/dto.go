@@ -7,7 +7,11 @@ type CreateUserInput struct {
 }
 
 type UpdateUserInput struct {
-	Name     *string
-	Email    *string
-	Password *string
+	Name  *string
+	Email *string
+}
+
+type UpdatePasswordInput struct {
+	OldPassword string
+	NewPassword string
 }

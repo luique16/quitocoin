@@ -12,6 +12,7 @@ func NewRouter(
 	login *usecase.LoginUseCase,
 	getMe *usecase.GetUserUseCase,
 	updateMe *usecase.UpdateUserUseCase,
+	updatePassword *usecase.UpdatePasswordUseCase,
 	deleteMe *usecase.DeleteUserUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
@@ -28,6 +29,7 @@ func NewRouter(
 	{
 		me.GET("", HandleGetMe(getMe))
 		me.PUT("", HandleUpdateMe(updateMe))
+		me.PUT("/password", HandleUpdatePassword(updatePassword))
 		me.DELETE("", HandleDeleteMe(deleteMe))
 	}
 

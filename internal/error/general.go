@@ -6,5 +6,6 @@ var (
 	ErrInternal           = errors.New("internal error")
 	ErrNotFound           = errors.New("resource not found")
 	ErrInvalidID          = errors.New("invalid id")
-	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInvalidCredentials  = errors.New("invalid email or password")
+	ErrIncorrectPassword = errors.New("incorrect password")
 )
