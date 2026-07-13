@@ -10,10 +10,9 @@ import (
 func NewRouter(
 	register *usecase.RegisterUseCase,
 	login *usecase.LoginUseCase,
-	get *usecase.GetUserUseCase,
-	list *usecase.ListUsersUseCase,
-	update *usecase.UpdateUserUseCase,
-	del *usecase.DeleteUserUseCase,
+	getMe *usecase.GetUserUseCase,
+	updateMe *usecase.UpdateUserUseCase,
+	deleteMe *usecase.DeleteUserUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -24,13 +23,12 @@ func NewRouter(
 		auth.POST("/login", HandleLogin(login))
 	}
 
-	api := r.Group("/users")
-	api.Use(middleware.Auth(jwtProvider))
+	me := r.Group("/me")
+	me.Use(middleware.Auth(jwtProvider))
 	{
-		api.GET("/:id", HandleGetUser(get))
-		api.GET("", HandleListUsers(list))
-		api.PUT("/:id", HandleUpdateUser(update))
-		api.DELETE("/:id", HandleDeleteUser(del))
+		me.GET("", HandleGetMe(getMe))
+		me.PUT("", HandleUpdateMe(updateMe))
+		me.DELETE("", HandleDeleteMe(deleteMe))
 	}
 
 	return r

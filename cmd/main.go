@@ -39,12 +39,11 @@ func main() {
 
 	registerUC := usecase.NewRegisterUseCase(userService, jwtProvider)
 	loginUC := usecase.NewLoginUseCase(repo, hasher, jwtProvider)
-	getUserUC := usecase.NewGetUserUseCase(userService)
-	listUsersUC := usecase.NewListUsersUseCase(userService)
-	updateUserUC := usecase.NewUpdateUserUseCase(userService)
-	deleteUserUC := usecase.NewDeleteUserUseCase(userService)
+	getMeUC := usecase.NewGetUserUseCase(userService)
+	updateMeUC := usecase.NewUpdateUserUseCase(userService)
+	deleteMeUC := usecase.NewDeleteUserUseCase(userService)
 
-	router := handler.NewRouter(registerUC, loginUC, getUserUC, listUsersUC, updateUserUC, deleteUserUC, jwtProvider)
+	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, deleteMeUC, jwtProvider)
 
 	log.Printf("server running on :%s", cfg.ServerPort)
 	if err := router.Run(":" + cfg.ServerPort); err != nil {
