@@ -1,7 +1,51 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"log"
+
+	_ "github.com/lib/pq"
+
+	"github.com/luique16/quitocoin/ent"
+	"github.com/luique16/quitocoin/internal/config"
+	"github.com/luique16/quitocoin/internal/domain/user"
+	"github.com/luique16/quitocoin/internal/handler"
+	"github.com/luique16/quitocoin/internal/provider"
+	"github.com/luique16/quitocoin/internal/usecase"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
+
+	client, err := ent.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer client.Close()
+
+	if err := client.Schema.Create(context.Background()); err != nil {
+		log.Fatalf("migration: %v", err)
+	}
+
+	hasher := provider.NewPasswordHasher()
+	idGen := provider.NewIdGenerator()
+
+	repo := user.NewRepository(client)
+	user_service := user.NewService(repo, hasher, idGen)
+
+	createUserUC := usecase.NewCreateUserUseCase(user_service)
+	getUserUC := usecase.NewGetUserUseCase(user_service)
+	listUsersUC := usecase.NewListUsersUseCase(user_service)
+	updateUserUC := usecase.NewUpdateUserUseCase(user_service)
+	deleteUserUC := usecase.NewDeleteUserUseCase(user_service)
+
+	router := handler.NewRouter(createUserUC, getUserUC, listUsersUC, updateUserUC, deleteUserUC)
+
+	log.Printf("server running on :%s", cfg.ServerPort)
+	if err := router.Run(":" + cfg.ServerPort); err != nil {
+		log.Fatalf("server: %v", err)
+	}
 }
