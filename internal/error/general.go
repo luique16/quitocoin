@@ -3,7 +3,6 @@ package errorpkg
 import "errors"
 
 var (
-	ErrInternal = errors.New("internal error")
-	ErrNotFound = errors.New("resource not found")
+	ErrInternal  = errors.New("internal error")
 	ErrInvalidID = errors.New("invalid id")
 )

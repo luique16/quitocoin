@@ -11,7 +11,12 @@ import (
 	"github.com/luique16/quitocoin/ent"
 	"github.com/luique16/quitocoin/internal/domain/user"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
+	"github.com/luique16/quitocoin/internal/provider"
 )
+
+func newService(repo user.Repository) user.Service {
+	return user.NewService(repo, provider.NewPasswordHasher(), provider.NewUUIDGenerator())
+}
 
 // -- assertion helpers ---------------------------------------------------
 
@@ -59,9 +64,17 @@ func assertNotNil(t *testing.T, v interface{}) {
 
 func assertNil(t *testing.T, v interface{}) {
 	t.Helper()
-	if v != nil {
-		t.Fatalf("expected nil, got %v", v)
+	if v == nil {
+		return
 	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func, reflect.Interface:
+		if rv.IsNil() {
+			return
+		}
+	}
+	t.Fatalf("expected nil, got %v", v)
 }
 
 func assertTrue(t *testing.T, v bool, msg string) {
@@ -152,7 +165,7 @@ func strPtr(s string) *string { return &s }
 
 func TestCreate_Success(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	input := user.CreateUserInput{
@@ -189,7 +202,7 @@ func TestCreate_Success(t *testing.T) {
 
 func TestCreate_EmailAlreadyExists(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.CreateFn = func(_ context.Context, _ *ent.User) (*ent.User, error) {
@@ -207,7 +220,7 @@ func TestCreate_EmailAlreadyExists(t *testing.T) {
 
 func TestCreate_RepositoryError(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.CreateFn = func(_ context.Context, _ *ent.User) (*ent.User, error) {
@@ -225,7 +238,7 @@ func TestCreate_RepositoryError(t *testing.T) {
 
 func TestCreate_EmptyName(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	_, err := svc.Create(context.Background(), user.CreateUserInput{
 		Name: "", Email: "john@example.com", Password: "pass123",
@@ -237,7 +250,7 @@ func TestCreate_EmptyName(t *testing.T) {
 
 func TestCreate_EmptyEmail(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	_, err := svc.Create(context.Background(), user.CreateUserInput{
 		Name: "John Doe", Email: "", Password: "pass123",
@@ -249,7 +262,7 @@ func TestCreate_EmptyEmail(t *testing.T) {
 
 func TestCreate_EmptyPassword(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	_, err := svc.Create(context.Background(), user.CreateUserInput{
 		Name: "John Doe", Email: "john@example.com", Password: "",
@@ -261,7 +274,7 @@ func TestCreate_EmptyPassword(t *testing.T) {
 
 func TestCreate_InvalidEmail(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	invalidEmails := []struct {
 		name  string
@@ -290,7 +303,7 @@ func TestCreate_InvalidEmail(t *testing.T) {
 
 func TestGet_Success(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	expected := makeUser()
@@ -308,7 +321,7 @@ func TestGet_Success(t *testing.T) {
 
 func TestGet_NotFound(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.GetFn = func(_ context.Context, _ string) (*ent.User, error) {
@@ -324,7 +337,7 @@ func TestGet_NotFound(t *testing.T) {
 
 func TestGet_EmptyID(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	_, err := svc.Get(context.Background(), "")
 
@@ -334,7 +347,7 @@ func TestGet_EmptyID(t *testing.T) {
 
 func TestGet_RepositoryError(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.GetFn = func(_ context.Context, _ string) (*ent.User, error) {
@@ -352,7 +365,7 @@ func TestGet_RepositoryError(t *testing.T) {
 
 func TestList_Success(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	expected := makeUsers(3)
@@ -372,7 +385,7 @@ func TestList_Success(t *testing.T) {
 
 func TestList_Empty(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.ListFn = func(_ context.Context) ([]*ent.User, error) {
@@ -388,7 +401,7 @@ func TestList_Empty(t *testing.T) {
 
 func TestList_Nil(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.ListFn = func(_ context.Context) ([]*ent.User, error) {
@@ -404,7 +417,7 @@ func TestList_Nil(t *testing.T) {
 
 func TestList_RepositoryError(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.ListFn = func(_ context.Context) ([]*ent.User, error) {
@@ -422,7 +435,7 @@ func TestList_RepositoryError(t *testing.T) {
 
 func TestUpdate_Success(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -459,7 +472,7 @@ func TestUpdate_Success(t *testing.T) {
 
 func TestUpdate_PartialName(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -489,7 +502,7 @@ func TestUpdate_PartialName(t *testing.T) {
 
 func TestUpdate_PartialEmail(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -519,7 +532,7 @@ func TestUpdate_PartialEmail(t *testing.T) {
 
 func TestUpdate_PartialPassword(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -549,7 +562,7 @@ func TestUpdate_PartialPassword(t *testing.T) {
 
 func TestUpdate_NotFound(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.GetFn = func(_ context.Context, _ string) (*ent.User, error) {
@@ -568,7 +581,7 @@ func TestUpdate_NotFound(t *testing.T) {
 
 func TestUpdate_EmptyID(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	_, err := svc.Update(context.Background(), "", user.UpdateUserInput{
 		Name: strPtr("No Matter"),
@@ -581,7 +594,7 @@ func TestUpdate_EmptyID(t *testing.T) {
 
 func TestUpdate_NoFields(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -605,7 +618,7 @@ func TestUpdate_NoFields(t *testing.T) {
 
 func TestUpdate_EmailConflict(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -630,7 +643,7 @@ func TestUpdate_EmailConflict(t *testing.T) {
 
 func TestDelete_Success(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
@@ -654,7 +667,7 @@ func TestDelete_Success(t *testing.T) {
 
 func TestDelete_NotFound(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	repo.GetFn = func(_ context.Context, _ string) (*ent.User, error) {
@@ -670,7 +683,7 @@ func TestDelete_NotFound(t *testing.T) {
 
 func TestDelete_EmptyID(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 
 	err := svc.Delete(context.Background(), "")
 
@@ -681,7 +694,7 @@ func TestDelete_EmptyID(t *testing.T) {
 
 func TestDelete_RepositoryError(t *testing.T) {
 	repo := NewMockRepository()
-	svc := user.NewService(repo)
+	svc := newService(repo)
 	ctx := context.Background()
 
 	existing := makeUser()
