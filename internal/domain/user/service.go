@@ -38,6 +38,7 @@ func (s *service) Create(ctx context.Context, input CreateUserInput) (*ent.User,
 	}
 
 	id := s.idGen.Generate()
+	public_id := s.idGen.Generate()
 	hashed, err := s.hasher.Hash(input.Password)
 	if err != nil {
 		return nil, errorpkg.ErrInternal
@@ -48,8 +49,8 @@ func (s *service) Create(ctx context.Context, input CreateUserInput) (*ent.User,
 		Name:      input.Name,
 		Email:     input.Email,
 		Password:  hashed,
-		PublicID:  "pub_" + id,
-		CreatedAt: time.Now(),
+		PublicID:  public_id,
+		CreatedAt: time.Now().UTC(),
 	}
 
 	created, err := s.repo.Create(ctx, u)
