@@ -270,6 +270,28 @@ func TestCredit_GetBalanceError(t *testing.T) {
 	assertEqual(t, 0, repo.SetBalanceCallCount())
 }
 
+func TestCredit_NotFound(t *testing.T) {
+	repo := NewMockRepository()
+	svc := newService(repo)
+	ctx := context.Background()
+
+	repo.GetBalanceFn = func(_ context.Context, _ string) (float32, error) {
+		return 0, errorpkg.ErrUTXONotFound
+	}
+
+	repo.SetBalanceFn = func(_ context.Context, userId string, amount float32) error {
+		assertEqual(t, "user-1", userId)
+		assertEqual(t, float32(50.0), amount)
+		return nil
+	}
+
+	err := svc.Credit(ctx, "user-1", 50.0)
+
+	assertNoError(t, err)
+	assertEqual(t, 1, repo.GetBalanceCallCount())
+	assertEqual(t, 1, repo.SetBalanceCallCount())
+}
+
 func TestCredit_SetBalanceError(t *testing.T) {
 	repo := NewMockRepository()
 	svc := newService(repo)

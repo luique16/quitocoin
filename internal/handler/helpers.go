@@ -34,15 +34,24 @@ func mapError(err error) int {
 		errors.Is(err, errorpkg.ErrInvalidEmail),
 		errors.Is(err, errorpkg.ErrPasswordRequired),
 		errors.Is(err, errorpkg.ErrWeakPassword),
-		errors.Is(err, errorpkg.ErrInvalidID):
+		errors.Is(err, errorpkg.ErrInvalidID),
+		errors.Is(err, errorpkg.ErrNegativeAmount),
+		errors.Is(err, errorpkg.ErrInvalidBlockHash),
+		errors.Is(err, errorpkg.ErrInvalidNonce),
+		errors.Is(err, errorpkg.ErrInvalidBlockIndex):
 		return http.StatusBadRequest
 	case errors.Is(err, errorpkg.ErrInvalidCredentials),
 		errors.Is(err, errorpkg.ErrIncorrectPassword):
 		return http.StatusUnauthorized
-	case errors.Is(err, errorpkg.ErrUserNotFound):
+	case errors.Is(err, errorpkg.ErrUserNotFound),
+		errors.Is(err, errorpkg.ErrBlockNotFound),
+		errors.Is(err, errorpkg.ErrUTXONotFound):
 		return http.StatusNotFound
-	case errors.Is(err, errorpkg.ErrEmailExists):
+	case errors.Is(err, errorpkg.ErrEmailExists),
+		errors.Is(err, errorpkg.ErrBlockExists):
 		return http.StatusConflict
+	case errors.Is(err, errorpkg.ErrInsufficientBalance):
+		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
 	}
