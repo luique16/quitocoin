@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/luique16/quitocoin/ent"
+	"github.com/luique16/quitocoin/internal/domain/transaction"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
 )
 
 type Service interface {
 	CreateGenesisBlock(ctx context.Context) (*ent.Block, error)
-	TryToMineBlock(ctx context.Context, miner string, nonce int64) (*ent.Block, error)
+	TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32) (*ent.Block, error)
 	GetBlockByHash(ctx context.Context, hash string) (*ent.Block, error)
 	GetBlockByIndex(ctx context.Context, index int) (*ent.Block, error)
 	GetLastBlock(ctx context.Context) (*ent.Block, error)
@@ -23,7 +24,7 @@ type Service interface {
 	ValidateChain(ctx context.Context) (bool, error)
 }
 
-var DifficultyPrefix = "000"
+var DifficultyPrefix = strings.Repeat("0", Difficulty)
 
 type service struct {
 	transactionsPerBlock int
@@ -38,36 +39,42 @@ func NewService(transactionsPerBlock int, repo Repository) Service {
 }
 
 func (s *service) CreateGenesisBlock(ctx context.Context) (*ent.Block, error) {
+	var nonce int64
 	now := time.Now().UTC()
 
-	b := &ent.Block{
-		Hash:         CalculateHash(0, now, "", 0, nil),
-		Index:        0,
-		PreviousHash: "",
-		Nonce:        0,
-		Miner:        "system",
-		Reward:       0,
-		Transactions: nil,
-		CreatedAt:    now,
-	}
+	for {
+		hash := CalculateHash(0, "system", 0.0, "", nonce, nil)
+		if strings.HasPrefix(hash, DifficultyPrefix) {
+			b := &ent.Block{
+				Hash:         hash,
+				Index:        0,
+				PreviousHash: "",
+				Nonce:        nonce,
+				Miner:        "system",
+				Reward:       0,
+				Transactions: nil,
+				CreatedAt:    now,
+			}
 
-	created, err := s.repo.Create(ctx, b)
-	if err != nil {
-		return nil, err
-	}
+			created, err := s.repo.Create(ctx, b)
+			if err != nil {
+				return nil, err
+			}
 
-	return created, nil
+			return created, nil
+		}
+		nonce++
+	}
 }
 
-func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64) (*ent.Block, error) {
+func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32) (*ent.Block, error) {
 	last, err := s.repo.GetLast(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now().UTC()
 	newIndex := last.Index + 1
-	hash := CalculateHash(newIndex, now, last.Hash, nonce, nil)
+	hash := CalculateHash(newIndex, miner, reward, last.Hash, nonce, nil)
 
 	if !strings.HasPrefix(hash, DifficultyPrefix) {
 		return nil, errorpkg.ErrInvalidNonce
@@ -81,7 +88,7 @@ func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64)
 		Miner:        miner,
 		Reward:       1.0,
 		Transactions: nil,
-		CreatedAt:    now,
+		CreatedAt:    time.Now().UTC(),
 	}
 
 	created, err := s.repo.Create(ctx, b)
@@ -132,7 +139,7 @@ func (s *service) ValidateChain(ctx context.Context) (bool, error) {
 	}
 
 	for i, b := range blocks {
-		expectedHash := CalculateHash(b.Index, b.CreatedAt, b.PreviousHash, b.Nonce, b.Transactions)
+		expectedHash := CalculateHash(b.Index, b.Miner, float32(b.Reward), b.PreviousHash, b.Nonce, b.Transactions)
 		if b.Hash != expectedHash {
 			return false, nil
 		}
@@ -144,8 +151,15 @@ func (s *service) ValidateChain(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func CalculateHash(index int, timestamp time.Time, previousHash string, nonce int64, transactions any) string {
-	data := fmt.Sprintf("%d:%d:%s:%d:%v", index, timestamp.UnixNano(), previousHash, nonce, transactions)
+func CalculateHash(index int, miner string, reward float32, previousHash string, nonce int64, transactions []transaction.Transaction) string {
+	transactionsData := ""
+	for i := range transactions {
+		transactionsData += fmt.Sprintf("%s:%f:%s;", transactions[i].From, transactions[i].Amount, transactions[i].To)
+	}
+
+	data := fmt.Sprintf("%d:%s:%f:%s:%d:%s", index, miner, reward, previousHash, nonce, transactionsData)
+
 	hash := sha256.Sum256([]byte(data))
+
 	return hex.EncodeToString(hash[:])
 }

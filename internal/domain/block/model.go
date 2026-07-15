@@ -9,6 +9,8 @@ import (
 
 const (
 	Difficulty = 7
+	BaseReward = 50.0
+	RewardPerTransaction = 1.0
 )
 
 type Block struct {

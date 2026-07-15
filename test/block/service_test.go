@@ -104,9 +104,16 @@ func assertDeepEqual(t *testing.T, expected, actual interface{}) {
 	}
 }
 
-func calculateHashHelper(index int, timestamp time.Time, previousHash string, nonce int64, tx []transaction.Transaction) string {
-	data := fmt.Sprintf("%d:%d:%s:%d:%v", index, timestamp.UnixNano(), previousHash, nonce, tx)
+func calculateHashHelper(index int, miner string, reward float32, previousHash string, nonce int64, tx []transaction.Transaction) string {
+	transactionsData := ""
+	for i := range tx {
+		transactionsData += fmt.Sprintf("%s:%f:%s;", tx[i].From, tx[i].Amount, tx[i].To)
+	}
+
+	data := fmt.Sprintf("%d:%s:%f:%s:%d:%s", index, miner, reward, previousHash, nonce, transactionsData)
+
 	hash := sha256.Sum256([]byte(data))
+
 	return hex.EncodeToString(hash[:])
 }
 
@@ -130,7 +137,7 @@ func makeBlock(index int, overrides ...func(*ent.Block)) *ent.Block {
 		CreatedAt:    t,
 	}
 
-	hash := calculateHashHelper(index, t, "", 0, nil)
+	hash := calculateHashHelper(index, "system", 0, "", 0, nil)
 	b.Hash = hash
 
 	for _, o := range overrides {
@@ -158,7 +165,7 @@ func makeValidChain(n int) []*ent.Block {
 			Transactions: nil,
 			CreatedAt:    t,
 		}
-		blocks[i].Hash = calculateHashHelper(i, t, prevHash, 0, nil)
+		blocks[i].Hash = calculateHashHelper(i, "miner", 1.0, prevHash, 0, nil)
 	}
 	return blocks
 }
@@ -166,6 +173,10 @@ func makeValidChain(n int) []*ent.Block {
 // -- CreateGenesisBlock tests -------------------------------------------
 
 func TestCreateGenesisBlock_Success(t *testing.T) {
+	oldPrefix := block.DifficultyPrefix
+	block.DifficultyPrefix = ""
+	defer func() { block.DifficultyPrefix = oldPrefix }()
+
 	repo := NewMockRepository()
 	svc := newService(repo)
 	ctx := context.Background()
@@ -175,7 +186,7 @@ func TestCreateGenesisBlock_Success(t *testing.T) {
 		assertEqual(t, "system", b.Miner)
 		assertEqual(t, float64(0), b.Reward)
 		assertEqual(t, "", b.PreviousHash)
-		assertEqual(t, int64(0), b.Nonce)
+		assertTrue(t, b.Nonce >= 0, "nonce must be non-negative")
 		assertTrue(t, b.Hash != "", "hash must be set")
 		assertTrue(t, !b.CreatedAt.IsZero(), "created_at must be set")
 		return b, nil
@@ -188,12 +199,16 @@ func TestCreateGenesisBlock_Success(t *testing.T) {
 	assertEqual(t, 0, result.Index)
 	assertEqual(t, "system", result.Miner)
 	assertEqual(t, "", result.PreviousHash)
-	assertEqual(t, int64(0), result.Nonce)
+	assertTrue(t, result.Nonce >= 0, "nonce must be non-negative")
 	assertTrue(t, result.Hash != "", "hash must be returned")
 	assertEqual(t, 1, repo.CreateCallCount())
 }
 
 func TestCreateGenesisBlock_RepositoryError(t *testing.T) {
+	oldPrefix := block.DifficultyPrefix
+	block.DifficultyPrefix = ""
+	defer func() { block.DifficultyPrefix = oldPrefix }()
+
 	repo := NewMockRepository()
 	svc := newService(repo)
 	ctx := context.Background()
@@ -210,6 +225,10 @@ func TestCreateGenesisBlock_RepositoryError(t *testing.T) {
 }
 
 func TestCreateGenesisBlock_BlockExists(t *testing.T) {
+	oldPrefix := block.DifficultyPrefix
+	block.DifficultyPrefix = ""
+	defer func() { block.DifficultyPrefix = oldPrefix }()
+
 	repo := NewMockRepository()
 	svc := newService(repo)
 	ctx := context.Background()
@@ -252,7 +271,7 @@ func TestTryToMineBlock_Success(t *testing.T) {
 		return b, nil
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
 
 	assertNoError(t, err)
 	assertNotNil(t, result)
@@ -275,7 +294,7 @@ func TestTryToMineBlock_InvalidNonce(t *testing.T) {
 		return genesis, nil
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
 
 	assertErrorIs(t, err, errorpkg.ErrInvalidNonce)
 	assertNil(t, result)
@@ -292,7 +311,7 @@ func TestTryToMineBlock_NoLastBlock(t *testing.T) {
 		return nil, errorpkg.ErrBlockNotFound
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
 
 	assertErrorIs(t, err, errorpkg.ErrBlockNotFound)
 	assertNil(t, result)
@@ -320,8 +339,7 @@ func TestTryToMineBlock_CreateError(t *testing.T) {
 		return nil, errorpkg.ErrInternal
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0)
-
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
 	assertErrorIs(t, err, errorpkg.ErrInternal)
 	assertNil(t, result)
 	assertEqual(t, 1, repo.GetLastCallCount())
@@ -683,7 +701,7 @@ func TestValidateChain_HashMismatch(t *testing.T) {
 	ctx := context.Background()
 
 	blocks := makeValidChain(2)
-	blocks[0].CreatedAt = now().Add(-time.Hour)
+	blocks[0].Nonce = 999
 
 	repo.ListFn = func(_ context.Context) ([]*ent.Block, error) {
 		return blocks, nil
