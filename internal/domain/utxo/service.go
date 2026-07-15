@@ -2,6 +2,7 @@ package utxo
 
 import (
 	"context"
+	"errors"
 
 	errorpkg "github.com/luique16/quitocoin/internal/error"
 )
@@ -38,7 +39,7 @@ func (s *service) Credit(ctx context.Context, userId string, amount float32) err
 	}
 
 	balance, err := s.repo.GetBalance(ctx, userId)
-	if err != nil {
+	if err != nil && !errors.Is(err, errorpkg.ErrUTXONotFound) {
 		return err
 	}
 
@@ -54,7 +55,7 @@ func (s *service) Debit(ctx context.Context, userId string, amount float32) erro
 	}
 
 	balance, err := s.repo.GetBalance(ctx, userId)
-	if err != nil {
+	if err != nil && !errors.Is(err, errorpkg.ErrUTXONotFound) {
 		return err
 	}
 

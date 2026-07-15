@@ -86,7 +86,7 @@ func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64,
 		PreviousHash: last.Hash,
 		Nonce:        nonce,
 		Miner:        miner,
-		Reward:       1.0,
+		Reward:       float64(reward),
 		Transactions: nil,
 		CreatedAt:    time.Now().UTC(),
 	}
