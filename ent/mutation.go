@@ -11,8 +11,10 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/luique16/quitocoin/ent/block"
 	"github.com/luique16/quitocoin/ent/predicate"
 	"github.com/luique16/quitocoin/ent/user"
+	"github.com/luique16/quitocoin/internal/domain/transaction"
 )
 
 const (
@@ -24,8 +26,831 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeUser = "User"
+	TypeBlock = "Block"
+	TypeUser  = "User"
 )
+
+// BlockMutation represents an operation that mutates the Block nodes in the graph.
+type BlockMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *int
+	hash               *string
+	index              *int
+	addindex           *int
+	previous_hash      *string
+	nonce              *int64
+	addnonce           *int64
+	miner              *string
+	reward             *float64
+	addreward          *float64
+	transactions       *[]transaction.Transaction
+	appendtransactions []transaction.Transaction
+	created_at         *time.Time
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*Block, error)
+	predicates         []predicate.Block
+}
+
+var _ ent.Mutation = (*BlockMutation)(nil)
+
+// blockOption allows management of the mutation configuration using functional options.
+type blockOption func(*BlockMutation)
+
+// newBlockMutation creates new mutation for the Block entity.
+func newBlockMutation(c config, op Op, opts ...blockOption) *BlockMutation {
+	m := &BlockMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBlock,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBlockID sets the ID field of the mutation.
+func withBlockID(id int) blockOption {
+	return func(m *BlockMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Block
+		)
+		m.oldValue = func(ctx context.Context) (*Block, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Block.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBlock sets the old Block of the mutation.
+func withBlock(node *Block) blockOption {
+	return func(m *BlockMutation) {
+		m.oldValue = func(context.Context) (*Block, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BlockMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BlockMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BlockMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BlockMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Block.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetHash sets the "hash" field.
+func (m *BlockMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *BlockMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *BlockMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetIndex sets the "index" field.
+func (m *BlockMutation) SetIndex(i int) {
+	m.index = &i
+	m.addindex = nil
+}
+
+// Index returns the value of the "index" field in the mutation.
+func (m *BlockMutation) Index() (r int, exists bool) {
+	v := m.index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndex returns the old "index" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIndex is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
+	}
+	return oldValue.Index, nil
+}
+
+// AddIndex adds i to the "index" field.
+func (m *BlockMutation) AddIndex(i int) {
+	if m.addindex != nil {
+		*m.addindex += i
+	} else {
+		m.addindex = &i
+	}
+}
+
+// AddedIndex returns the value that was added to the "index" field in this mutation.
+func (m *BlockMutation) AddedIndex() (r int, exists bool) {
+	v := m.addindex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetIndex resets all changes to the "index" field.
+func (m *BlockMutation) ResetIndex() {
+	m.index = nil
+	m.addindex = nil
+}
+
+// SetPreviousHash sets the "previous_hash" field.
+func (m *BlockMutation) SetPreviousHash(s string) {
+	m.previous_hash = &s
+}
+
+// PreviousHash returns the value of the "previous_hash" field in the mutation.
+func (m *BlockMutation) PreviousHash() (r string, exists bool) {
+	v := m.previous_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreviousHash returns the old "previous_hash" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldPreviousHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreviousHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreviousHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreviousHash: %w", err)
+	}
+	return oldValue.PreviousHash, nil
+}
+
+// ResetPreviousHash resets all changes to the "previous_hash" field.
+func (m *BlockMutation) ResetPreviousHash() {
+	m.previous_hash = nil
+}
+
+// SetNonce sets the "nonce" field.
+func (m *BlockMutation) SetNonce(i int64) {
+	m.nonce = &i
+	m.addnonce = nil
+}
+
+// Nonce returns the value of the "nonce" field in the mutation.
+func (m *BlockMutation) Nonce() (r int64, exists bool) {
+	v := m.nonce
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNonce returns the old "nonce" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldNonce(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNonce is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNonce requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNonce: %w", err)
+	}
+	return oldValue.Nonce, nil
+}
+
+// AddNonce adds i to the "nonce" field.
+func (m *BlockMutation) AddNonce(i int64) {
+	if m.addnonce != nil {
+		*m.addnonce += i
+	} else {
+		m.addnonce = &i
+	}
+}
+
+// AddedNonce returns the value that was added to the "nonce" field in this mutation.
+func (m *BlockMutation) AddedNonce() (r int64, exists bool) {
+	v := m.addnonce
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNonce resets all changes to the "nonce" field.
+func (m *BlockMutation) ResetNonce() {
+	m.nonce = nil
+	m.addnonce = nil
+}
+
+// SetMiner sets the "miner" field.
+func (m *BlockMutation) SetMiner(s string) {
+	m.miner = &s
+}
+
+// Miner returns the value of the "miner" field in the mutation.
+func (m *BlockMutation) Miner() (r string, exists bool) {
+	v := m.miner
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMiner returns the old "miner" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldMiner(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMiner is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMiner requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMiner: %w", err)
+	}
+	return oldValue.Miner, nil
+}
+
+// ResetMiner resets all changes to the "miner" field.
+func (m *BlockMutation) ResetMiner() {
+	m.miner = nil
+}
+
+// SetReward sets the "reward" field.
+func (m *BlockMutation) SetReward(f float64) {
+	m.reward = &f
+	m.addreward = nil
+}
+
+// Reward returns the value of the "reward" field in the mutation.
+func (m *BlockMutation) Reward() (r float64, exists bool) {
+	v := m.reward
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReward returns the old "reward" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldReward(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReward is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReward requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReward: %w", err)
+	}
+	return oldValue.Reward, nil
+}
+
+// AddReward adds f to the "reward" field.
+func (m *BlockMutation) AddReward(f float64) {
+	if m.addreward != nil {
+		*m.addreward += f
+	} else {
+		m.addreward = &f
+	}
+}
+
+// AddedReward returns the value that was added to the "reward" field in this mutation.
+func (m *BlockMutation) AddedReward() (r float64, exists bool) {
+	v := m.addreward
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReward resets all changes to the "reward" field.
+func (m *BlockMutation) ResetReward() {
+	m.reward = nil
+	m.addreward = nil
+}
+
+// SetTransactions sets the "transactions" field.
+func (m *BlockMutation) SetTransactions(t []transaction.Transaction) {
+	m.transactions = &t
+	m.appendtransactions = nil
+}
+
+// Transactions returns the value of the "transactions" field in the mutation.
+func (m *BlockMutation) Transactions() (r []transaction.Transaction, exists bool) {
+	v := m.transactions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransactions returns the old "transactions" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldTransactions(ctx context.Context) (v []transaction.Transaction, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransactions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransactions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransactions: %w", err)
+	}
+	return oldValue.Transactions, nil
+}
+
+// AppendTransactions adds t to the "transactions" field.
+func (m *BlockMutation) AppendTransactions(t []transaction.Transaction) {
+	m.appendtransactions = append(m.appendtransactions, t...)
+}
+
+// AppendedTransactions returns the list of values that were appended to the "transactions" field in this mutation.
+func (m *BlockMutation) AppendedTransactions() ([]transaction.Transaction, bool) {
+	if len(m.appendtransactions) == 0 {
+		return nil, false
+	}
+	return m.appendtransactions, true
+}
+
+// ResetTransactions resets all changes to the "transactions" field.
+func (m *BlockMutation) ResetTransactions() {
+	m.transactions = nil
+	m.appendtransactions = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BlockMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BlockMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Block entity.
+// If the Block object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BlockMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BlockMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the BlockMutation builder.
+func (m *BlockMutation) Where(ps ...predicate.Block) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BlockMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BlockMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Block, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BlockMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BlockMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Block).
+func (m *BlockMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BlockMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.hash != nil {
+		fields = append(fields, block.FieldHash)
+	}
+	if m.index != nil {
+		fields = append(fields, block.FieldIndex)
+	}
+	if m.previous_hash != nil {
+		fields = append(fields, block.FieldPreviousHash)
+	}
+	if m.nonce != nil {
+		fields = append(fields, block.FieldNonce)
+	}
+	if m.miner != nil {
+		fields = append(fields, block.FieldMiner)
+	}
+	if m.reward != nil {
+		fields = append(fields, block.FieldReward)
+	}
+	if m.transactions != nil {
+		fields = append(fields, block.FieldTransactions)
+	}
+	if m.created_at != nil {
+		fields = append(fields, block.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BlockMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case block.FieldHash:
+		return m.Hash()
+	case block.FieldIndex:
+		return m.Index()
+	case block.FieldPreviousHash:
+		return m.PreviousHash()
+	case block.FieldNonce:
+		return m.Nonce()
+	case block.FieldMiner:
+		return m.Miner()
+	case block.FieldReward:
+		return m.Reward()
+	case block.FieldTransactions:
+		return m.Transactions()
+	case block.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BlockMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case block.FieldHash:
+		return m.OldHash(ctx)
+	case block.FieldIndex:
+		return m.OldIndex(ctx)
+	case block.FieldPreviousHash:
+		return m.OldPreviousHash(ctx)
+	case block.FieldNonce:
+		return m.OldNonce(ctx)
+	case block.FieldMiner:
+		return m.OldMiner(ctx)
+	case block.FieldReward:
+		return m.OldReward(ctx)
+	case block.FieldTransactions:
+		return m.OldTransactions(ctx)
+	case block.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Block field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BlockMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case block.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case block.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndex(v)
+		return nil
+	case block.FieldPreviousHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreviousHash(v)
+		return nil
+	case block.FieldNonce:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNonce(v)
+		return nil
+	case block.FieldMiner:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMiner(v)
+		return nil
+	case block.FieldReward:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReward(v)
+		return nil
+	case block.FieldTransactions:
+		v, ok := value.([]transaction.Transaction)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransactions(v)
+		return nil
+	case block.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Block field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BlockMutation) AddedFields() []string {
+	var fields []string
+	if m.addindex != nil {
+		fields = append(fields, block.FieldIndex)
+	}
+	if m.addnonce != nil {
+		fields = append(fields, block.FieldNonce)
+	}
+	if m.addreward != nil {
+		fields = append(fields, block.FieldReward)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BlockMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case block.FieldIndex:
+		return m.AddedIndex()
+	case block.FieldNonce:
+		return m.AddedNonce()
+	case block.FieldReward:
+		return m.AddedReward()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BlockMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case block.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddIndex(v)
+		return nil
+	case block.FieldNonce:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNonce(v)
+		return nil
+	case block.FieldReward:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReward(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Block numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BlockMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BlockMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BlockMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Block nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BlockMutation) ResetField(name string) error {
+	switch name {
+	case block.FieldHash:
+		m.ResetHash()
+		return nil
+	case block.FieldIndex:
+		m.ResetIndex()
+		return nil
+	case block.FieldPreviousHash:
+		m.ResetPreviousHash()
+		return nil
+	case block.FieldNonce:
+		m.ResetNonce()
+		return nil
+	case block.FieldMiner:
+		m.ResetMiner()
+		return nil
+	case block.FieldReward:
+		m.ResetReward()
+		return nil
+	case block.FieldTransactions:
+		m.ResetTransactions()
+		return nil
+	case block.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Block field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BlockMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BlockMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BlockMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BlockMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BlockMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BlockMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BlockMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Block unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BlockMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Block edge %s", name)
+}
 
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {

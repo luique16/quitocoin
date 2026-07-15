@@ -6,5 +6,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Block is the predicate function for block builders.
+type Block func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

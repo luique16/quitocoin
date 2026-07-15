@@ -8,6 +8,24 @@ import (
 )
 
 var (
+	// BlocksColumns holds the columns for the "blocks" table.
+	BlocksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "hash", Type: field.TypeString, Unique: true},
+		{Name: "index", Type: field.TypeInt},
+		{Name: "previous_hash", Type: field.TypeString},
+		{Name: "nonce", Type: field.TypeInt64},
+		{Name: "miner", Type: field.TypeString},
+		{Name: "reward", Type: field.TypeFloat64},
+		{Name: "transactions", Type: field.TypeJSON},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// BlocksTable holds the schema information for the "blocks" table.
+	BlocksTable = &schema.Table{
+		Name:       "blocks",
+		Columns:    BlocksColumns,
+		PrimaryKey: []*schema.Column{BlocksColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
@@ -25,6 +43,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		BlocksTable,
 		UsersTable,
 	}
 )
