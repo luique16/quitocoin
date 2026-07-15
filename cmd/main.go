@@ -51,7 +51,7 @@ func main() {
 	initializer := usecase.NewInitializerUseCase(blockService, memPool, utxoService)
 	registerUC := usecase.NewRegisterUseCase(userService, jwtProvider)
 	loginUC := usecase.NewLoginUseCase(userRepo, hasher, jwtProvider)
-	getMeUC := usecase.NewGetUserUseCase(userService)
+	getMeUC := usecase.NewGetUserUseCase(userService, utxoService)
 	updateMeUC := usecase.NewUpdateUserUseCase(userService)
 	updatePasswordUC := usecase.NewUpdatePasswordUseCase(userService)
 	deleteMeUC := usecase.NewDeleteUserUseCase(userService)

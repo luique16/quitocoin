@@ -26,6 +26,6 @@ func HandleUpdateMe(uc *usecase.UpdateUserUseCase) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, toUserResponse(result))
+		c.JSON(http.StatusOK, toUserResponse(result, 0))
 	}
 }

@@ -18,7 +18,7 @@ func HandleMineBlock(uc *usecase.MineBlockUseCase) gin.HandlerFunc {
 
 		claims := middleware.GetClaims(c)
 
-		b, err := uc.Execute(c.Request.Context(), claims.UserID, input)
+		b, err := uc.Execute(c.Request.Context(), claims.PublicID, input)
 		if err != nil {
 			code := mapError(err)
 			c.JSON(code, gin.H{"error": err.Error()})

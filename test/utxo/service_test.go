@@ -409,7 +409,7 @@ func TestDebit_BalanceNotFound(t *testing.T) {
 
 	err := svc.Debit(ctx, "user-1", 50.0)
 
-	assertErrorIs(t, err, errorpkg.ErrUTXONotFound)
+	assertErrorIs(t, err, errorpkg.ErrInsufficientBalance)
 	assertEqual(t, 1, repo.GetBalanceCallCount())
 	assertEqual(t, 0, repo.SetBalanceCallCount())
 }

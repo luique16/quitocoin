@@ -14,15 +14,17 @@ type userResponse struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	PublicID  string    `json:"public_id"`
+	Balance   float32   `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func toUserResponse(u *ent.User) userResponse {
+func toUserResponse(u *ent.User, balance float32) userResponse {
 	return userResponse{
 		ID:        u.ID,
 		Name:      u.Name,
 		Email:     u.Email,
 		PublicID:  u.PublicID,
+		Balance:   balance,
 		CreatedAt: u.CreatedAt,
 	}
 }

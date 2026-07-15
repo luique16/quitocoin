@@ -8,6 +8,7 @@ import (
 
 type JWTClaims struct {
 	UserID   string `json:"user_id"`
+	PublicID string `json:"public_id"`
 	jwt.RegisteredClaims
 }
 
@@ -27,6 +28,7 @@ func NewJWTProvider(secret string) JWTProvider {
 func (p *jwtProvider) GenerateToken(userID, publicID string) (string, error) {
 	claims := &JWTClaims{
 		UserID:   userID,
+		PublicID: publicID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

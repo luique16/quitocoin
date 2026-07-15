@@ -12,13 +12,13 @@ func HandleGetMe(uc *usecase.GetUserUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)
 
-		result, err := uc.Execute(c.Request.Context(), claims.UserID)
+		result, err := uc.Execute(c.Request.Context(), claims.UserID, claims.PublicID)
 		if err != nil {
 			code := mapError(err)
 			c.JSON(code, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, toUserResponse(result))
+		c.JSON(http.StatusOK, toUserResponse(result.User, result.Balance))
 	}
 }
