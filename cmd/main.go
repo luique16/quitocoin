@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/redis/go-redis/v9"
 	_ "github.com/lib/pq"
 
 	"github.com/luique16/quitocoin/ent"
@@ -42,7 +43,12 @@ func main() {
 
 	memPool := transaction.NewMemPool()
 
-	utxoRepo := utxo.NewRepository()
+	rdb := redis.NewClient(&redis.Options{
+		Addr: cfg.RedisURL,
+	})
+	defer rdb.Close()
+
+	utxoRepo := utxo.NewRepository(rdb)
 	utxoService := utxo.NewService(utxoRepo)
 
 	userRepo := user.NewRepository(client)

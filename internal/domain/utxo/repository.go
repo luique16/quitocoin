@@ -2,10 +2,13 @@ package utxo
 
 import (
 	"context"
-	"sync"
+	"errors"
 
+	"github.com/redis/go-redis/v9"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
 )
+
+const utxoKeyPrefix = "utxo:"
 
 type Repository interface {
 	GetBalance(ctx context.Context, userId string) (float32, error)
@@ -13,31 +16,24 @@ type Repository interface {
 }
 
 type repo struct {
-	mu   sync.RWMutex
-	data UTXO
+	rdb redis.Cmdable
 }
 
-func NewRepository() *repo {
-	return &repo{
-		data: make(UTXO),
-	}
+func NewRepository(rdb redis.Cmdable) *repo {
+	return &repo{rdb: rdb}
 }
 
-func (r *repo) GetBalance(_ context.Context, userId string) (float32, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	balance, ok := r.data[userId]
-	if !ok {
+func (r *repo) GetBalance(ctx context.Context, userId string) (float32, error) {
+	val, err := r.rdb.Get(ctx, utxoKeyPrefix+userId).Float32()
+	if errors.Is(err, redis.Nil) {
 		return 0, errorpkg.ErrUTXONotFound
 	}
-	return balance, nil
+	if err != nil {
+		return 0, err
+	}
+	return val, nil
 }
 
-func (r *repo) SetBalance(_ context.Context, userId string, amount float32) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.data[userId] = amount
-	return nil
+func (r *repo) SetBalance(ctx context.Context, userId string, amount float32) error {
+	return r.rdb.Set(ctx, utxoKeyPrefix+userId, amount, 0).Err()
 }

@@ -11,6 +11,7 @@ type Config struct {
 	DatabaseURL string
 	ServerPort  string
 	JWTSecret   string
+	RedisURL    string
 }
 
 func Load() (*Config, error) {
@@ -20,6 +21,7 @@ func Load() (*Config, error) {
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		ServerPort:  getEnv("SERVER_PORT", "8080"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
+		RedisURL:    getEnv("REDIS_URL", "localhost:6379"),
 	}
 
 	if cfg.DatabaseURL == "" {

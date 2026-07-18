@@ -3,13 +3,26 @@ package utxo_test
 import (
 	"context"
 	"testing"
+	"log"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	utxo "github.com/luique16/quitocoin/internal/domain/utxo"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
 )
 
+func newTestRepo() (utxo.Repository, *miniredis.Miniredis) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		log.Fatalf("miniredis: %v", err)
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	return utxo.NewRepository(rdb), mr
+}
+
 func TestRealRepo_SetAndGetBalance(t *testing.T) {
-	repo := utxo.NewRepository()
+	repo, mr := newTestRepo()
+	defer mr.Close()
 	ctx := context.Background()
 
 	err := repo.SetBalance(ctx, "user-1", 100.0)
@@ -21,7 +34,8 @@ func TestRealRepo_SetAndGetBalance(t *testing.T) {
 }
 
 func TestRealRepo_GetBalanceNotFound(t *testing.T) {
-	repo := utxo.NewRepository()
+	repo, mr := newTestRepo()
+	defer mr.Close()
 	ctx := context.Background()
 
 	balance, err := repo.GetBalance(ctx, "nonexistent")
@@ -31,7 +45,8 @@ func TestRealRepo_GetBalanceNotFound(t *testing.T) {
 }
 
 func TestRealRepo_UpdateBalance(t *testing.T) {
-	repo := utxo.NewRepository()
+	repo, mr := newTestRepo()
+	defer mr.Close()
 	ctx := context.Background()
 
 	_ = repo.SetBalance(ctx, "user-1", 100.0)
@@ -45,7 +60,8 @@ func TestRealRepo_UpdateBalance(t *testing.T) {
 }
 
 func TestRealRepo_MultipleUsers(t *testing.T) {
-	repo := utxo.NewRepository()
+	repo, mr := newTestRepo()
+	defer mr.Close()
 	ctx := context.Background()
 
 	_ = repo.SetBalance(ctx, "alice", 100.0)
@@ -59,7 +75,8 @@ func TestRealRepo_MultipleUsers(t *testing.T) {
 }
 
 func TestRealRepo_ConcurrentAccess(t *testing.T) {
-	repo := utxo.NewRepository()
+	repo, mr := newTestRepo()
+	defer mr.Close()
 	ctx := context.Background()
 
 	_ = repo.SetBalance(ctx, "user-1", 0)
