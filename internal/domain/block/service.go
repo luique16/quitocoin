@@ -152,12 +152,15 @@ func (s *service) ValidateChain(ctx context.Context) (bool, error) {
 }
 
 func CalculateHash(index int, miner string, reward float32, previousHash string, nonce int64, transactions []transaction.Transaction) string {
-	transactionsData := ""
+	var builder strings.Builder
+
 	for i := range transactions {
-		transactionsData += fmt.Sprintf("%s:%f:%s;", transactions[i].From, transactions[i].Amount, transactions[i].To)
+		fmt.Fprintf(&builder, "%s:%f:%s;", transactions[i].From, transactions[i].Amount, transactions[i].To)
 	}
 
-	data := fmt.Sprintf("%d:%s:%f:%s:%d:%s", index, miner, reward, previousHash, nonce, transactionsData)
+	transactionsData := builder.String()
+
+	data := fmt.Sprintf("%d:%d:%s:%f:%s:%s", nonce, index, miner, reward, previousHash, transactionsData)
 
 	hash := sha256.Sum256([]byte(data))
 
