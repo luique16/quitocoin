@@ -64,6 +64,7 @@ func main() {
 	mineBlockUC := usecase.NewMineBlockUseCase(blockService, utxoService, memPool, 3)
 	getNextBlockUC := usecase.NewGetNextBlockDataUseCase(blockService, memPool, 3)
 	createTransferUC := usecase.NewCreateTransferUseCase(userService, memPool)
+	getPendingTxsUC := usecase.NewGetPendingTransactionsUseCase(memPool, 3)
 
 	err = initializer.Execute(context.Background())
 
@@ -71,7 +72,7 @@ func main() {
 		log.Fatalf("initializer: %v", err)
 	}
 
-	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, updatePasswordUC, deleteMeUC, mineBlockUC, getNextBlockUC, createTransferUC, jwtProvider)
+	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, updatePasswordUC, deleteMeUC, mineBlockUC, getNextBlockUC, createTransferUC, getPendingTxsUC, jwtProvider)
 
 	log.Printf("server running on :%s", cfg.ServerPort)
 	if err := router.Run(":" + cfg.ServerPort); err != nil {

@@ -17,6 +17,7 @@ func NewRouter(
 	mineBlock *usecase.MineBlockUseCase,
 	getNextBlock *usecase.GetNextBlockDataUseCase,
 	createTransfer *usecase.CreateTransferUseCase,
+	getPendingTransactions *usecase.GetPendingTransactionsUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -47,6 +48,7 @@ func NewRouter(
 	transfer.Use(middleware.Auth(jwtProvider))
 	{
 		transfer.POST("", HandleCreateTransfer(createTransfer))
+		transfer.GET("/pending", HandleGetPendingTransactions(getPendingTransactions))
 	}
 
 	return r
