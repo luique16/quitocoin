@@ -1,16 +1,64 @@
 package transaction
 
-type mempool struct {
-	transactions []Transaction
+import "context"
+
+type service struct {
+	repo Repository
+	ctx  context.Context
 }
 
-func NewMemPool() MemPool {
-	return &mempool{
-		transactions: []Transaction{},
+func NewService(repo Repository) MemPool {
+	return &service{repo: repo, ctx: context.Background()}
+}
+
+type inMemoryRepo struct {
+	txs []Transaction
+}
+
+func NewInMemoryRepository() Repository {
+	return &inMemoryRepo{txs: []Transaction{}}
+}
+
+func (r *inMemoryRepo) Push(_ context.Context, t Transaction) error {
+	r.txs = append(r.txs, t)
+	return nil
+}
+
+func (r *inMemoryRepo) PullFirst(_ context.Context, n int) ([]Transaction, error) {
+	if n <= 0 {
+		return []Transaction{}, nil
 	}
+	count := len(r.txs)
+	if n > count {
+		n = count
+	}
+	result := make([]Transaction, n)
+	copy(result, r.txs[:n])
+	return result, nil
 }
 
-func (m *mempool) CreateTransaction(from string, to string, amount float32) Transaction {
+func (r *inMemoryRepo) DeleteFirst(_ context.Context, n int) error {
+	if n <= 0 {
+		return nil
+	}
+	count := len(r.txs)
+	if n > count {
+		n = count
+	}
+	r.txs = r.txs[n:]
+	return nil
+}
+
+func (r *inMemoryRepo) Count(_ context.Context) (int, error) {
+	return len(r.txs), nil
+}
+
+func (r *inMemoryRepo) Clear(_ context.Context) error {
+	r.txs = []Transaction{}
+	return nil
+}
+
+func (s *service) CreateTransaction(from string, to string, amount float32) Transaction {
 	return Transaction{
 		From:   from,
 		To:     to,
@@ -18,38 +66,30 @@ func (m *mempool) CreateTransaction(from string, to string, amount float32) Tran
 	}
 }
 
-func (m *mempool) PushTransaction(t Transaction) {
-	m.transactions = append(m.transactions, t)
+func (s *service) PushTransaction(t Transaction) {
+	s.repo.Push(s.ctx, t)
 }
 
-func (m *mempool) DeleteFirstTransactions(n int) {
-	if n <= 0 {
-		return
-	}
-	count := len(m.transactions)
-	if n > count {
-		n = count
-	}
-	m.transactions = m.transactions[n:]
+func (s *service) DeleteFirstTransactions(n int) {
+	s.repo.DeleteFirst(s.ctx, n)
 }
 
-func (m *mempool) PullFirstTransactions(n int) []Transaction {
-	if n <= 0 {
+func (s *service) PullFirstTransactions(n int) []Transaction {
+	txs, err := s.repo.PullFirst(s.ctx, n)
+	if err != nil {
 		return []Transaction{}
 	}
-	count := len(m.transactions)
-	if n > count {
-		n = count
+	return txs
+}
+
+func (s *service) Count() int {
+	count, err := s.repo.Count(s.ctx)
+	if err != nil {
+		return 0
 	}
-	result := make([]Transaction, n)
-	copy(result, m.transactions[:n])
-	return result
+	return count
 }
 
-func (m *mempool) Count() int {
-	return len(m.transactions)
-}
-
-func (m *mempool) Clear() {
-	m.transactions = []Transaction{}
+func (s *service) Clear() {
+	s.repo.Clear(s.ctx)
 }

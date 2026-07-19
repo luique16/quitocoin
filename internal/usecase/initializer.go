@@ -6,26 +6,27 @@ import (
 
 	"github.com/luique16/quitocoin/internal/domain/block"
 	"github.com/luique16/quitocoin/internal/domain/transaction"
+	"github.com/luique16/quitocoin/internal/domain/userblock"
 	"github.com/luique16/quitocoin/internal/domain/utxo"
 )
 
 type InitializerUseCase struct {
-	blockService block.Service
-	memPool      transaction.MemPool
-	utxoService  utxo.Service
+	blockService     block.Service
+	memPool          transaction.MemPool
+	utxoService      utxo.Service
+	userBlockService userblock.Service
 }
 
-func NewInitializerUseCase(blockService block.Service, memPool transaction.MemPool, utxoService utxo.Service) *InitializerUseCase {
+func NewInitializerUseCase(blockService block.Service, memPool transaction.MemPool, utxoService utxo.Service, userBlockService userblock.Service) *InitializerUseCase {
 	return &InitializerUseCase{
-		blockService: blockService,
-		memPool:      memPool,
-		utxoService:  utxoService,
+		blockService:     blockService,
+		memPool:          memPool,
+		utxoService:      utxoService,
+		userBlockService: userBlockService,
 	}
 }
 
 func (uc *InitializerUseCase) Execute(ctx context.Context) error {
-	uc.memPool.Clear()
-
 	chainLength, err := uc.blockService.GetChainLength(ctx)
 	if err != nil {
 		return err
@@ -40,49 +41,52 @@ func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 		}
 	}
 
-	hasData, err := uc.utxoService.HasData(ctx)
+	hasUTXO, err := uc.utxoService.HasData(ctx)
 	if err != nil {
 		return err
 	}
 
-	if hasData {
-		return nil
-	}
-
-	chainLength, err = uc.blockService.GetChainLength(ctx)
-
-	if err != nil {
-		return err
-	}
-
-	blocks, err := uc.blockService.GetLastBlocks(ctx, chainLength)
-
-	if err != nil {
-		return err
-	}
-
-	for _, block := range blocks {
-		if block.PreviousHash == "" {
-			continue
-		}
-
-		err = uc.utxoService.Credit(ctx, block.Miner, float32(block.Reward))
+	if !hasUTXO {
+		chainLength, err = uc.blockService.GetChainLength(ctx)
 
 		if err != nil {
 			return err
 		}
 
-		for _, tx := range block.Transactions {
-			err = uc.utxoService.Debit(ctx, tx.From, tx.Amount+1)
+		blocks, err := uc.blockService.GetLastBlocks(ctx, chainLength)
+
+		if err != nil {
+			return err
+		}
+
+		for _, block := range blocks {
+			if block.PreviousHash == "" {
+				continue
+			}
+
+			uc.userBlockService.AddBlock(ctx, block.Miner, block.Index)
+
+			err = uc.utxoService.Credit(ctx, block.Miner, float32(block.Reward))
 
 			if err != nil {
 				return err
 			}
 
-			err = uc.utxoService.Credit(ctx, tx.To, tx.Amount)
+			for _, tx := range block.Transactions {
+				uc.userBlockService.AddBlock(ctx, tx.From, block.Index)
+				uc.userBlockService.AddBlock(ctx, tx.To, block.Index)
 
-			if err != nil {
-				return err
+				err = uc.utxoService.Debit(ctx, tx.From, tx.Amount+1)
+
+				if err != nil {
+					return err
+				}
+
+				err = uc.utxoService.Credit(ctx, tx.To, tx.Amount)
+
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

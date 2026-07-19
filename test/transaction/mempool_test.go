@@ -7,7 +7,7 @@ import (
 )
 
 func newMP() transaction.MemPool {
-	return transaction.NewMemPool()
+	return transaction.NewService(transaction.NewInMemoryRepository())
 }
 
 func TestCreateTransaction(t *testing.T) {
