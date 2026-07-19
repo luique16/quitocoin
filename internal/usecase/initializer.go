@@ -26,8 +26,6 @@ func NewInitializerUseCase(blockService block.Service, memPool transaction.MemPo
 func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 	uc.memPool.Clear()
 
-	uc.utxoService.Clear(ctx)
-
 	chainLength, err := uc.blockService.GetChainLength(ctx)
 	if err != nil {
 		return err
@@ -40,6 +38,15 @@ func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	hasData, err := uc.utxoService.HasData(ctx)
+	if err != nil {
+		return err
+	}
+
+	if hasData {
+		return nil
 	}
 
 	chainLength, err = uc.blockService.GetChainLength(ctx)

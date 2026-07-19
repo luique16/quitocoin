@@ -14,6 +14,7 @@ type Repository interface {
 	GetBalance(ctx context.Context, userId string) (float32, error)
 	SetBalance(ctx context.Context, userId string, amount float32) error
 	GetAll(ctx context.Context) ([]Entry, error)
+	HasData(ctx context.Context) (bool, error)
 	Clear(ctx context.Context) error
 }
 
@@ -70,4 +71,12 @@ func (r *repo) GetAll(ctx context.Context) ([]Entry, error) {
 	}
 
 	return entries, nil
+}
+
+func (r *repo) HasData(ctx context.Context) (bool, error) {
+	keys, err := r.rdb.Keys(ctx, utxoKeyPrefix+"*").Result()
+	if err != nil {
+		return false, err
+	}
+	return len(keys) > 0, nil
 }

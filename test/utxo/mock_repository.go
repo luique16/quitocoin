@@ -23,11 +23,13 @@ type MockRepository struct {
 	SetBalanceFn func(ctx context.Context, userId string, amount float32) error
 	ClearFn      func(ctx context.Context) error
 	GetAllFn     func(ctx context.Context) ([]utxo.Entry, error)
+	HasDataFn    func(ctx context.Context) (bool, error)
 
 	getBalanceCalls []mockGetBalanceArgs
 	setBalanceCalls []mockSetBalanceArgs
 	clearCalls      []struct{ ctx context.Context }
 	getAllCalls     []struct{ ctx context.Context }
+	hasDataCalls    []struct{ ctx context.Context }
 }
 
 func NewMockRepository() *MockRepository {
@@ -66,10 +68,19 @@ func (m *MockRepository) GetAll(ctx context.Context) ([]utxo.Entry, error) {
 	return nil, nil
 }
 
+func (m *MockRepository) HasData(ctx context.Context) (bool, error) {
+	m.hasDataCalls = append(m.hasDataCalls, struct{ ctx context.Context }{ctx: ctx})
+	if m.HasDataFn != nil {
+		return m.HasDataFn(ctx)
+	}
+	return false, nil
+}
+
 func (m *MockRepository) GetBalanceCallCount() int { return len(m.getBalanceCalls) }
 func (m *MockRepository) SetBalanceCallCount() int { return len(m.setBalanceCalls) }
 func (m *MockRepository) ClearCallCount() int     { return len(m.clearCalls) }
 func (m *MockRepository) GetAllCallCount() int     { return len(m.getAllCalls) }
+func (m *MockRepository) HasDataCallCount() int     { return len(m.hasDataCalls) }
 
 var _ utxo.Repository = (*MockRepository)(nil)
 
