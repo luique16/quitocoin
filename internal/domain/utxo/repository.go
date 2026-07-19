@@ -13,6 +13,7 @@ const utxoKeyPrefix = "utxo:"
 type Repository interface {
 	GetBalance(ctx context.Context, userId string) (float32, error)
 	SetBalance(ctx context.Context, userId string, amount float32) error
+	GetAll(ctx context.Context) ([]Entry, error)
 	Clear(ctx context.Context) error
 }
 
@@ -48,4 +49,25 @@ func (r *repo) Clear(ctx context.Context) error {
 		return r.rdb.Del(ctx, keys...).Err()
 	}
 	return nil
+}
+
+func (r *repo) GetAll(ctx context.Context) ([]Entry, error) {
+	keys, err := r.rdb.Keys(ctx, utxoKeyPrefix+"*").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]Entry, 0, len(keys))
+	for _, key := range keys {
+		val, err := r.rdb.Get(ctx, key).Float32()
+		if err != nil {
+			continue
+		}
+		entries = append(entries, Entry{
+			UserId: key[len(utxoKeyPrefix):],
+			Amount: val,
+		})
+	}
+
+	return entries, nil
 }

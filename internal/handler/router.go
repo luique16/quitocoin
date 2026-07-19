@@ -18,6 +18,7 @@ func NewRouter(
 	getNextBlock *usecase.GetNextBlockDataUseCase,
 	createTransfer *usecase.CreateTransferUseCase,
 	getPendingTransactions *usecase.GetPendingTransactionsUseCase,
+	getRichest *usecase.GetRichestUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -49,6 +50,12 @@ func NewRouter(
 	{
 		transfer.POST("", HandleCreateTransfer(createTransfer))
 		transfer.GET("/pending", HandleGetPendingTransactions(getPendingTransactions))
+	}
+
+	utxo := r.Group("/")
+	utxo.Use(middleware.Auth(jwtProvider))
+	{
+		utxo.GET("/ranking", HandleGetRichest(getRichest))
 	}
 
 	return r

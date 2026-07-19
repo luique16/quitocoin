@@ -10,6 +10,7 @@ import (
 type Service interface {
 	SetBalance(ctx context.Context, userId string, amount float32) error
 	GetBalance(ctx context.Context, userId string) (float32, error)
+	GetAll(ctx context.Context) ([]Entry, error)
 	Credit(ctx context.Context, userId string, amount float32) error
 	Debit(ctx context.Context, userId string, amount float32) error
 	Clear(ctx context.Context) error
@@ -69,4 +70,8 @@ func (s *service) Debit(ctx context.Context, userId string, amount float32) erro
 
 func (s *service) Clear(ctx context.Context) error {
 	return s.repo.Clear(ctx)
+}
+
+func (s *service) GetAll(ctx context.Context) ([]Entry, error) {
+	return s.repo.GetAll(ctx)
 }
