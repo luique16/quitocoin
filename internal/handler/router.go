@@ -20,6 +20,7 @@ func NewRouter(
 	getPendingTransactions *usecase.GetPendingTransactionsUseCase,
 	getRichest *usecase.GetRichestUseCase,
 	getUserBlocks *usecase.GetUserBlocksUseCase,
+	getMyPendingTxs *usecase.GetMyPendingTransactionsUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -53,6 +54,7 @@ func NewRouter(
 	{
 		transfer.POST("", HandleCreateTransfer(createTransfer))
 		transfer.GET("/pending", HandleGetPendingTransactions(getPendingTransactions))
+		transfer.GET("/pending/me", HandleGetMyPendingTransactions(getMyPendingTxs))
 	}
 
 	utxo := r.Group("/")
