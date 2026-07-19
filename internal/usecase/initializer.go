@@ -46,47 +46,62 @@ func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
-	if !hasUTXO {
-		chainLength, err = uc.blockService.GetChainLength(ctx)
+	hasMempool := uc.memPool.Count() > 0
+
+	hasUserBlocks, err := uc.userBlockService.HasData(ctx)
+	if err != nil {
+		return err
+	}
+
+	if hasUTXO && hasMempool && hasUserBlocks {
+		return nil
+	}
+
+	fmt.Println("Loading blockchain into cache...")
+
+	uc.utxoService.Clear(ctx)
+	uc.memPool.Clear()
+	uc.userBlockService.Clear(ctx)
+
+	chainLength, err = uc.blockService.GetChainLength(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	blocks, err := uc.blockService.GetLastBlocks(ctx, chainLength)
+
+	if err != nil {
+		return err
+	}
+
+	for _, block := range blocks {
+		if block.PreviousHash == "" {
+			continue
+		}
+
+		uc.userBlockService.AddBlock(ctx, block.Miner, block.Index, "miner")
+
+		err = uc.utxoService.Credit(ctx, block.Miner, float32(block.Reward))
 
 		if err != nil {
 			return err
 		}
 
-		blocks, err := uc.blockService.GetLastBlocks(ctx, chainLength)
+		for _, tx := range block.Transactions {
+			uc.userBlockService.AddBlock(ctx, tx.From, block.Index, "sender")
+			uc.userBlockService.AddBlock(ctx, tx.To, block.Index, "receiver")
 
-		if err != nil {
-			return err
-		}
-
-		for _, block := range blocks {
-			if block.PreviousHash == "" {
-				continue
-			}
-
-			uc.userBlockService.AddBlock(ctx, block.Miner, block.Index)
-
-			err = uc.utxoService.Credit(ctx, block.Miner, float32(block.Reward))
+			err = uc.utxoService.Debit(ctx, tx.From, tx.Amount+1)
 
 			if err != nil {
 				return err
 			}
 
-			for _, tx := range block.Transactions {
-				uc.userBlockService.AddBlock(ctx, tx.From, block.Index)
-				uc.userBlockService.AddBlock(ctx, tx.To, block.Index)
+			err = uc.utxoService.Credit(ctx, tx.To, tx.Amount)
 
-				err = uc.utxoService.Debit(ctx, tx.From, tx.Amount+1)
-
-				if err != nil {
-					return err
-				}
-
-				err = uc.utxoService.Credit(ctx, tx.To, tx.Amount)
-
-				if err != nil {
-					return err
-				}
+			if err != nil {
+				return err
 			}
 		}
 	}

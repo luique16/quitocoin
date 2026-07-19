@@ -19,6 +19,7 @@ func NewRouter(
 	createTransfer *usecase.CreateTransferUseCase,
 	getPendingTransactions *usecase.GetPendingTransactionsUseCase,
 	getRichest *usecase.GetRichestUseCase,
+	getUserBlocks *usecase.GetUserBlocksUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -43,6 +44,8 @@ func NewRouter(
 	{
 		blockchain.POST("/mine", HandleMineBlock(mineBlock))
 		blockchain.GET("/next-block", HandleGetNextBlock(getNextBlock))
+		blockchain.GET("/history", HandleGetUserBlocks(getUserBlocks))
+		blockchain.GET("/history/:public_id", HandleGetUserBlocks(getUserBlocks))
 	}
 
 	transfer := r.Group("/transfer")

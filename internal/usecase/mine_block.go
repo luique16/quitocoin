@@ -48,7 +48,7 @@ func (uc *MineBlockUseCase) Execute(ctx context.Context, minerID string, input M
 		return nil, fmt.Errorf("credit miner: %w", err)
 	}
 
-	uc.userBlockService.AddBlock(ctx, minerID, b.Index)
+	uc.userBlockService.AddBlock(ctx, minerID, b.Index, "miner")
 
 	for _, tx := range txs {
 		if err := uc.utxoService.Debit(ctx, tx.From, tx.Amount+1); err != nil {
@@ -58,8 +58,8 @@ func (uc *MineBlockUseCase) Execute(ctx context.Context, minerID string, input M
 			return nil, fmt.Errorf("credit receiver %s: %w", tx.To, err)
 		}
 
-		uc.userBlockService.AddBlock(ctx, tx.From, b.Index)
-		uc.userBlockService.AddBlock(ctx, tx.To, b.Index)
+		uc.userBlockService.AddBlock(ctx, tx.From, b.Index, "sender")
+		uc.userBlockService.AddBlock(ctx, tx.To, b.Index, "receiver")
 	}
 
 	return b, nil
