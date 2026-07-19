@@ -30,6 +30,12 @@ type mockGetLastNArgs struct {
 	n   int
 }
 
+type mockGetBlocksDescendingArgs struct {
+	ctx    context.Context
+	limit  int
+	offset int
+}
+
 type mockListArgs struct {
 	ctx context.Context
 }
@@ -39,21 +45,23 @@ type mockCountArgs struct {
 }
 
 type MockRepository struct {
-	CreateFn    func(ctx context.Context, b *ent.Block) (*ent.Block, error)
-	GetByHashFn func(ctx context.Context, hash string) (*ent.Block, error)
-	GetByIndexFn func(ctx context.Context, index int) (*ent.Block, error)
-	GetLastFn   func(ctx context.Context) (*ent.Block, error)
-	GetLastNFn  func(ctx context.Context, n int) ([]*ent.Block, error)
-	ListFn      func(ctx context.Context) ([]*ent.Block, error)
-	CountFn     func(ctx context.Context) (int, error)
+	CreateFn              func(ctx context.Context, b *ent.Block) (*ent.Block, error)
+	GetByHashFn           func(ctx context.Context, hash string) (*ent.Block, error)
+	GetByIndexFn          func(ctx context.Context, index int) (*ent.Block, error)
+	GetLastFn             func(ctx context.Context) (*ent.Block, error)
+	GetLastNFn            func(ctx context.Context, n int) ([]*ent.Block, error)
+	GetBlocksDescendingFn func(ctx context.Context, limit, offset int) ([]*ent.Block, error)
+	ListFn                func(ctx context.Context) ([]*ent.Block, error)
+	CountFn               func(ctx context.Context) (int, error)
 
-	createCalls    []mockCreateArgs
-	getByHashCalls []mockGetByHashArgs
-	getByIndexCalls []mockGetByIndexArgs
-	getLastCalls   []mockGetLastArgs
-	getLastNCalls  []mockGetLastNArgs
-	listCalls      []mockListArgs
-	countCalls     []mockCountArgs
+	createCalls              []mockCreateArgs
+	getByHashCalls           []mockGetByHashArgs
+	getByIndexCalls          []mockGetByIndexArgs
+	getLastCalls             []mockGetLastArgs
+	getLastNCalls            []mockGetLastNArgs
+	getBlocksDescendingCalls []mockGetBlocksDescendingArgs
+	listCalls                []mockListArgs
+	countCalls               []mockCountArgs
 }
 
 func NewMockRepository() *MockRepository {
@@ -100,6 +108,14 @@ func (m *MockRepository) GetLastN(ctx context.Context, n int) ([]*ent.Block, err
 	return nil, nil
 }
 
+func (m *MockRepository) GetBlocksDescending(ctx context.Context, limit, offset int) ([]*ent.Block, error) {
+	m.getBlocksDescendingCalls = append(m.getBlocksDescendingCalls, mockGetBlocksDescendingArgs{ctx: ctx, limit: limit, offset: offset})
+	if m.GetBlocksDescendingFn != nil {
+		return m.GetBlocksDescendingFn(ctx, limit, offset)
+	}
+	return nil, nil
+}
+
 func (m *MockRepository) List(ctx context.Context) ([]*ent.Block, error) {
 	m.listCalls = append(m.listCalls, mockListArgs{ctx: ctx})
 	if m.ListFn != nil {
@@ -121,5 +137,6 @@ func (m *MockRepository) GetByHashCallCount() int    { return len(m.getByHashCal
 func (m *MockRepository) GetByIndexCallCount() int   { return len(m.getByIndexCalls) }
 func (m *MockRepository) GetLastCallCount() int      { return len(m.getLastCalls) }
 func (m *MockRepository) GetLastNCallCount() int     { return len(m.getLastNCalls) }
+func (m *MockRepository) GetBlocksDescendingCallCount() int { return len(m.getBlocksDescendingCalls) }
 func (m *MockRepository) ListCallCount() int         { return len(m.listCalls) }
 func (m *MockRepository) CountCallCount() int        { return len(m.countCalls) }

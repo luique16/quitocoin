@@ -20,6 +20,7 @@ type Service interface {
 	GetBlockByIndex(ctx context.Context, index int) (*ent.Block, error)
 	GetLastBlock(ctx context.Context) (*ent.Block, error)
 	GetLastBlocks(ctx context.Context, n int) ([]*ent.Block, error)
+	GetBlocksDescending(ctx context.Context, limit, offset int) ([]*ent.Block, error)
 	GetChainLength(ctx context.Context) (int, error)
 	ValidateChain(ctx context.Context) (bool, error)
 }
@@ -122,6 +123,13 @@ func (s *service) GetLastBlocks(ctx context.Context, n int) ([]*ent.Block, error
 		return []*ent.Block{}, nil
 	}
 	return s.repo.GetLastN(ctx, n)
+}
+
+func (s *service) GetBlocksDescending(ctx context.Context, limit, offset int) ([]*ent.Block, error) {
+	if limit <= 0 {
+		return []*ent.Block{}, nil
+	}
+	return s.repo.GetBlocksDescending(ctx, limit, offset)
 }
 
 func (s *service) GetChainLength(ctx context.Context) (int, error) {

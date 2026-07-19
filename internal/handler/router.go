@@ -21,6 +21,8 @@ func NewRouter(
 	getRichest *usecase.GetRichestUseCase,
 	getUserBlocks *usecase.GetUserBlocksUseCase,
 	getMyPendingTxs *usecase.GetMyPendingTransactionsUseCase,
+	listBlocks *usecase.ListBlocksUseCase,
+	getBlock *usecase.GetBlockUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -47,6 +49,8 @@ func NewRouter(
 		blockchain.GET("/next-block", HandleGetNextBlock(getNextBlock))
 		blockchain.GET("/history", HandleGetUserBlocks(getUserBlocks))
 		blockchain.GET("/history/:public_id", HandleGetUserBlocks(getUserBlocks))
+		blockchain.GET("/blocks", HandleListBlocks(listBlocks))
+		blockchain.GET("/blocks/:index", HandleGetBlock(getBlock))
 	}
 
 	transfer := r.Group("/transfer")

@@ -15,6 +15,7 @@ type Repository interface {
 	GetByIndex(ctx context.Context, index int) (*ent.Block, error)
 	GetLast(ctx context.Context) (*ent.Block, error)
 	GetLastN(ctx context.Context, n int) ([]*ent.Block, error)
+	GetBlocksDescending(ctx context.Context, limit, offset int) ([]*ent.Block, error)
 	List(ctx context.Context) ([]*ent.Block, error)
 	Count(ctx context.Context) (int, error)
 }
@@ -92,6 +93,18 @@ func (r *repo) GetLastN(ctx context.Context, n int) ([]*ent.Block, error) {
 	}
 	for i, j := 0, len(all)-1; i < j; i, j = i+1, j-1 {
 		all[i], all[j] = all[j], all[i]
+	}
+	return all, nil
+}
+
+func (r *repo) GetBlocksDescending(ctx context.Context, limit, offset int) ([]*ent.Block, error) {
+	all, err := r.client.Block.Query().
+		Order(entblock.ByIndex(sql.OrderDesc())).
+		Limit(limit).
+		Offset(offset).
+		All(ctx)
+	if err != nil {
+		return nil, errorpkg.ErrInternal
 	}
 	return all, nil
 }
