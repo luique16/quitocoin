@@ -12,6 +12,7 @@ type Service interface {
 	GetBalance(ctx context.Context, userId string) (float32, error)
 	Credit(ctx context.Context, userId string, amount float32) error
 	Debit(ctx context.Context, userId string, amount float32) error
+	Clear(ctx context.Context) error
 }
 
 type service struct {
@@ -64,4 +65,8 @@ func (s *service) Debit(ctx context.Context, userId string, amount float32) erro
 	}
 
 	return s.repo.SetBalance(ctx, userId, balance-amount)
+}
+
+func (s *service) Clear(ctx context.Context) error {
+	return s.repo.Clear(ctx)
 }

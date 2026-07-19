@@ -16,6 +16,7 @@ func NewRouter(
 	deleteMe *usecase.DeleteUserUseCase,
 	mineBlock *usecase.MineBlockUseCase,
 	getNextBlock *usecase.GetNextBlockDataUseCase,
+	createTransfer *usecase.CreateTransferUseCase,
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
@@ -40,6 +41,12 @@ func NewRouter(
 	{
 		blockchain.POST("/mine", HandleMineBlock(mineBlock))
 		blockchain.GET("/next-block", HandleGetNextBlock(getNextBlock))
+	}
+
+	transfer := r.Group("/transfer")
+	transfer.Use(middleware.Auth(jwtProvider))
+	{
+		transfer.POST("", HandleCreateTransfer(createTransfer))
 	}
 
 	return r

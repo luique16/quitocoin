@@ -18,9 +18,11 @@ type mockSetBalanceArgs struct {
 type MockRepository struct {
 	GetBalanceFn func(ctx context.Context, userId string) (float32, error)
 	SetBalanceFn func(ctx context.Context, userId string, amount float32) error
+	ClearFn      func(ctx context.Context) error
 
 	getBalanceCalls []mockGetBalanceArgs
 	setBalanceCalls []mockSetBalanceArgs
+	clearCalls      []struct{ ctx context.Context }
 }
 
 func NewMockRepository() *MockRepository {
@@ -43,5 +45,14 @@ func (m *MockRepository) SetBalance(ctx context.Context, userId string, amount f
 	return nil
 }
 
+func (m *MockRepository) Clear(ctx context.Context) error {
+	m.clearCalls = append(m.clearCalls, struct{ ctx context.Context }{ctx: ctx})
+	if m.ClearFn != nil {
+		return m.ClearFn(ctx)
+	}
+	return nil
+}
+
 func (m *MockRepository) GetBalanceCallCount() int { return len(m.getBalanceCalls) }
 func (m *MockRepository) SetBalanceCallCount() int { return len(m.setBalanceCalls) }
+func (m *MockRepository) ClearCallCount() int     { return len(m.clearCalls) }

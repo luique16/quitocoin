@@ -34,7 +34,7 @@ func (uc *MineBlockUseCase) Execute(ctx context.Context, minerID string, input M
 	txs := uc.memPool.PullFirstTransactions(uc.transactionsPerBlock)
 	reward := block.BaseReward + block.RewardPerTransaction*float32(len(txs))
 
-	b, err := uc.blockService.TryToMineBlock(ctx, minerID, input.Nonce, reward)
+	b, err := uc.blockService.TryToMineBlock(ctx, minerID, input.Nonce, reward, txs)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (uc *MineBlockUseCase) Execute(ctx context.Context, minerID string, input M
 	}
 
 	for _, tx := range txs {
-		if err := uc.utxoService.Debit(ctx, tx.From, tx.Amount); err != nil {
+		if err := uc.utxoService.Debit(ctx, tx.From, tx.Amount+1); err != nil {
 			return nil, fmt.Errorf("debit sender %s: %w", tx.From, err)
 		}
 		if err := uc.utxoService.Credit(ctx, tx.To, tx.Amount); err != nil {

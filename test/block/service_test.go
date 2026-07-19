@@ -266,7 +266,7 @@ func TestTryToMineBlock_Success(t *testing.T) {
 		return b, nil
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0, nil)
 
 	assertNoError(t, err)
 	assertNotNil(t, result)
@@ -289,7 +289,7 @@ func TestTryToMineBlock_InvalidNonce(t *testing.T) {
 		return genesis, nil
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0, nil)
 
 	assertErrorIs(t, err, errorpkg.ErrInvalidNonce)
 	assertNil(t, result)
@@ -306,7 +306,7 @@ func TestTryToMineBlock_NoLastBlock(t *testing.T) {
 		return nil, errorpkg.ErrBlockNotFound
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0, nil)
 
 	assertErrorIs(t, err, errorpkg.ErrBlockNotFound)
 	assertNil(t, result)
@@ -334,7 +334,7 @@ func TestTryToMineBlock_CreateError(t *testing.T) {
 		return nil, errorpkg.ErrInternal
 	}
 
-	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0)
+	result, err := svc.TryToMineBlock(ctx, "alice", 0, 1.0, nil)
 	assertErrorIs(t, err, errorpkg.ErrInternal)
 	assertNil(t, result)
 	assertEqual(t, 1, repo.GetLastCallCount())

@@ -13,6 +13,7 @@ const utxoKeyPrefix = "utxo:"
 type Repository interface {
 	GetBalance(ctx context.Context, userId string) (float32, error)
 	SetBalance(ctx context.Context, userId string, amount float32) error
+	Clear(ctx context.Context) error
 }
 
 type repo struct {
@@ -36,4 +37,15 @@ func (r *repo) GetBalance(ctx context.Context, userId string) (float32, error) {
 
 func (r *repo) SetBalance(ctx context.Context, userId string, amount float32) error {
 	return r.rdb.Set(ctx, utxoKeyPrefix+userId, amount, 0).Err()
+}
+
+func (r *repo) Clear(ctx context.Context) error {
+	keys, err := r.rdb.Keys(ctx, utxoKeyPrefix+"*").Result()
+	if err != nil {
+		return err
+	}
+	if len(keys) > 0 {
+		return r.rdb.Del(ctx, keys...).Err()
+	}
+	return nil
 }

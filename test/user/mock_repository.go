@@ -21,8 +21,31 @@ type mockGetByEmailArgs struct {
 	email string
 }
 
+type mockGetByPublicIDArgs struct {
+	ctx      context.Context
+	publicID string
+}
+
 type mockListArgs struct {
 	ctx context.Context
+}
+
+type MockRepository struct {
+	CreateFn  func(ctx context.Context, u *ent.User) (*ent.User, error)
+	GetFn     func(ctx context.Context, id string) (*ent.User, error)
+	GetByEmailFn func(ctx context.Context, email string) (*ent.User, error)
+	GetByPublicIDFn func(ctx context.Context, publicID string) (*ent.User, error)
+	ListFn    func(ctx context.Context) ([]*ent.User, error)
+	UpdateFn  func(ctx context.Context, u *ent.User) (*ent.User, error)
+	DeleteFn  func(ctx context.Context, id string) error
+
+	createCalls  []mockCreateArgs
+	getCalls     []mockGetArgs
+	getByEmailCalls []mockGetByEmailArgs
+	getByPublicIDCalls []mockGetByPublicIDArgs
+	listCalls    []mockListArgs
+	updateCalls  []mockUpdateArgs
+	deleteCalls  []mockDeleteArgs
 }
 
 type mockUpdateArgs struct {
@@ -33,22 +56,6 @@ type mockUpdateArgs struct {
 type mockDeleteArgs struct {
 	ctx context.Context
 	id  string
-}
-
-type MockRepository struct {
-	CreateFn  func(ctx context.Context, u *ent.User) (*ent.User, error)
-	GetFn     func(ctx context.Context, id string) (*ent.User, error)
-	GetByEmailFn func(ctx context.Context, email string) (*ent.User, error)
-	ListFn    func(ctx context.Context) ([]*ent.User, error)
-	UpdateFn  func(ctx context.Context, u *ent.User) (*ent.User, error)
-	DeleteFn  func(ctx context.Context, id string) error
-
-	createCalls  []mockCreateArgs
-	getCalls     []mockGetArgs
-	getByEmailCalls []mockGetByEmailArgs
-	listCalls    []mockListArgs
-	updateCalls  []mockUpdateArgs
-	deleteCalls  []mockDeleteArgs
 }
 
 func NewMockRepository() *MockRepository {
@@ -75,6 +82,14 @@ func (m *MockRepository) GetByEmail(ctx context.Context, email string) (*ent.Use
 	m.getByEmailCalls = append(m.getByEmailCalls, mockGetByEmailArgs{ctx: ctx, email: email})
 	if m.GetByEmailFn != nil {
 		return m.GetByEmailFn(ctx, email)
+	}
+	return nil, nil
+}
+
+func (m *MockRepository) GetByPublicID(ctx context.Context, publicID string) (*ent.User, error) {
+	m.getByPublicIDCalls = append(m.getByPublicIDCalls, mockGetByPublicIDArgs{ctx: ctx, publicID: publicID})
+	if m.GetByPublicIDFn != nil {
+		return m.GetByPublicIDFn(ctx, publicID)
 	}
 	return nil, nil
 }
@@ -106,6 +121,7 @@ func (m *MockRepository) Delete(ctx context.Context, id string) error {
 func (m *MockRepository) CreateCallCount() int  { return len(m.createCalls) }
 func (m *MockRepository) GetCallCount() int     { return len(m.getCalls) }
 func (m *MockRepository) GetByEmailCallCount() int { return len(m.getByEmailCalls) }
+func (m *MockRepository) GetByPublicIDCallCount() int { return len(m.getByPublicIDCalls) }
 func (m *MockRepository) ListCallCount() int    { return len(m.listCalls) }
 func (m *MockRepository) UpdateCallCount() int  { return len(m.updateCalls) }
 func (m *MockRepository) DeleteCallCount() int  { return len(m.deleteCalls) }
@@ -129,6 +145,13 @@ func (m *MockRepository) GetByEmailArgs(index int) (context.Context, string) {
 		return nil, ""
 	}
 	return m.getByEmailCalls[index].ctx, m.getByEmailCalls[index].email
+}
+
+func (m *MockRepository) GetByPublicIDArgs(index int) (context.Context, string) {
+	if index >= len(m.getByPublicIDCalls) {
+		return nil, ""
+	}
+	return m.getByPublicIDCalls[index].ctx, m.getByPublicIDCalls[index].publicID
 }
 
 func (m *MockRepository) UpdateArgs(index int) (context.Context, *ent.User) {

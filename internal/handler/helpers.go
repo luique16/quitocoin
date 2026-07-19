@@ -40,7 +40,8 @@ func mapError(err error) int {
 		errors.Is(err, errorpkg.ErrNegativeAmount),
 		errors.Is(err, errorpkg.ErrInvalidBlockHash),
 		errors.Is(err, errorpkg.ErrInvalidNonce),
-		errors.Is(err, errorpkg.ErrInvalidBlockIndex):
+		errors.Is(err, errorpkg.ErrInvalidBlockIndex),
+		errors.Is(err, errorpkg.ErrSelfTransfer):
 		return http.StatusBadRequest
 	case errors.Is(err, errorpkg.ErrInvalidCredentials),
 		errors.Is(err, errorpkg.ErrIncorrectPassword):

@@ -14,6 +14,7 @@ import (
 type Service interface {
 	Create(ctx context.Context, input CreateUserInput) (*ent.User, error)
 	Get(ctx context.Context, id string) (*ent.User, error)
+	GetByPublicID(ctx context.Context, publicID string) (*ent.User, error)
 	List(ctx context.Context) ([]*ent.User, error)
 	Update(ctx context.Context, id string, input UpdateUserInput) (*ent.User, error)
 	UpdatePassword(ctx context.Context, id string, input UpdatePasswordInput) error
@@ -69,6 +70,19 @@ func (s *service) Get(ctx context.Context, id string) (*ent.User, error) {
 	}
 
 	u, err := s.repo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (s *service) GetByPublicID(ctx context.Context, publicID string) (*ent.User, error) {
+	if publicID == "" {
+		return nil, errorpkg.ErrInvalidID
+	}
+
+	u, err := s.repo.GetByPublicID(ctx, publicID)
 	if err != nil {
 		return nil, err
 	}

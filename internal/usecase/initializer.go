@@ -26,6 +26,8 @@ func NewInitializerUseCase(blockService block.Service, memPool transaction.MemPo
 func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 	uc.memPool.Clear()
 
+	uc.utxoService.Clear(ctx)
+
 	chainLength, err := uc.blockService.GetChainLength(ctx)
 	if err != nil {
 		return err
@@ -64,13 +66,13 @@ func (uc *InitializerUseCase) Execute(ctx context.Context) error {
 		}
 
 		for _, tx := range block.Transactions {
-			err = uc.utxoService.Debit(ctx, tx.From, float32(tx.Amount))
+			err = uc.utxoService.Debit(ctx, tx.From, tx.Amount+1)
 
 			if err != nil {
 				return err
 			}
 
-			err = uc.utxoService.Credit(ctx, tx.To, float32(tx.Amount))
+			err = uc.utxoService.Credit(ctx, tx.To, tx.Amount)
 
 			if err != nil {
 				return err

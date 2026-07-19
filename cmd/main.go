@@ -63,6 +63,7 @@ func main() {
 	deleteMeUC := usecase.NewDeleteUserUseCase(userService)
 	mineBlockUC := usecase.NewMineBlockUseCase(blockService, utxoService, memPool, 3)
 	getNextBlockUC := usecase.NewGetNextBlockDataUseCase(blockService, memPool, 3)
+	createTransferUC := usecase.NewCreateTransferUseCase(userService, memPool)
 
 	err = initializer.Execute(context.Background())
 
@@ -70,7 +71,7 @@ func main() {
 		log.Fatalf("initializer: %v", err)
 	}
 
-	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, updatePasswordUC, deleteMeUC, mineBlockUC, getNextBlockUC, jwtProvider)
+	router := handler.NewRouter(registerUC, loginUC, getMeUC, updateMeUC, updatePasswordUC, deleteMeUC, mineBlockUC, getNextBlockUC, createTransferUC, jwtProvider)
 
 	log.Printf("server running on :%s", cfg.ServerPort)
 	if err := router.Run(":" + cfg.ServerPort); err != nil {

@@ -15,7 +15,7 @@ import (
 
 type Service interface {
 	CreateGenesisBlock(ctx context.Context) (*ent.Block, error)
-	TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32) (*ent.Block, error)
+	TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32, transactions []transaction.Transaction) (*ent.Block, error)
 	GetBlockByHash(ctx context.Context, hash string) (*ent.Block, error)
 	GetBlockByIndex(ctx context.Context, index int) (*ent.Block, error)
 	GetLastBlock(ctx context.Context) (*ent.Block, error)
@@ -67,14 +67,14 @@ func (s *service) CreateGenesisBlock(ctx context.Context) (*ent.Block, error) {
 	}
 }
 
-func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32) (*ent.Block, error) {
+func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64, reward float32, transactions []transaction.Transaction) (*ent.Block, error) {
 	last, err := s.repo.GetLast(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	newIndex := last.Index + 1
-	hash := CalculateHash(newIndex, miner, reward, last.Hash, nonce, nil)
+	hash := CalculateHash(newIndex, miner, reward, last.Hash, nonce, transactions)
 
 	if !strings.HasPrefix(hash, DifficultyPrefix) {
 		return nil, errorpkg.ErrInvalidNonce
@@ -87,7 +87,7 @@ func (s *service) TryToMineBlock(ctx context.Context, miner string, nonce int64,
 		Nonce:        nonce,
 		Miner:        miner,
 		Reward:       float64(reward),
-		Transactions: nil,
+		Transactions: transactions,
 		CreatedAt:    time.Now().UTC(),
 	}
 
@@ -165,6 +165,9 @@ func CalculateHash(index int, miner string, reward float32, previousHash string,
 	data := fmt.Sprintf("%d%s", nonce, FormatBlockInput(index, miner, reward, previousHash, transactions))
 
 	hash := sha256.Sum256([]byte(data))
+
+	fmt.Printf("Data: %s\n", data)
+	fmt.Printf("Hash: %s\n", hex.EncodeToString(hash[:]))
 
 	return hex.EncodeToString(hash[:])
 }

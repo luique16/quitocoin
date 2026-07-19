@@ -12,6 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, u *ent.User) (*ent.User, error)
 	Get(ctx context.Context, id string) (*ent.User, error)
 	GetByEmail(ctx context.Context, email string) (*ent.User, error)
+	GetByPublicID(ctx context.Context, publicID string) (*ent.User, error)
 	List(ctx context.Context) ([]*ent.User, error)
 	Update(ctx context.Context, u *ent.User) (*ent.User, error)
 	Delete(ctx context.Context, id string) error
@@ -56,6 +57,17 @@ func (r *repo) Get(ctx context.Context, id string) (*ent.User, error) {
 
 func (r *repo) GetByEmail(ctx context.Context, email string) (*ent.User, error) {
 	u, err := r.client.User.Query().Where(entuser.Email(email)).Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errorpkg.ErrUserNotFound
+		}
+		return nil, errorpkg.ErrInternal
+	}
+	return u, nil
+}
+
+func (r *repo) GetByPublicID(ctx context.Context, publicID string) (*ent.User, error) {
+	u, err := r.client.User.Query().Where(entuser.PublicID(publicID)).Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errorpkg.ErrUserNotFound
