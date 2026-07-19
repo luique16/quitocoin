@@ -105,12 +105,7 @@ func assertDeepEqual(t *testing.T, expected, actual interface{}) {
 }
 
 func calculateHashHelper(index int, miner string, reward float32, previousHash string, nonce int64, tx []transaction.Transaction) string {
-	transactionsData := ""
-	for i := range tx {
-		transactionsData += fmt.Sprintf("%s:%f:%s;", tx[i].From, tx[i].Amount, tx[i].To)
-	}
-
-	data := fmt.Sprintf("%d:%s:%f:%s:%d:%s", index, miner, reward, previousHash, nonce, transactionsData)
+	data := fmt.Sprintf("%d%s", nonce, block.FormatBlockInput(index, miner, reward, previousHash, tx))
 
 	hash := sha256.Sum256([]byte(data))
 
