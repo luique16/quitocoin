@@ -8,6 +8,15 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Delete current user
+// @Description  Delete authenticated user account
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      204
+// @Failure      401  {object}  object{error=string}
+// @Router       /me [delete]
 func HandleDeleteMe(uc *usecase.DeleteUserUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)

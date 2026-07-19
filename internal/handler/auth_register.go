@@ -8,6 +8,16 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Register
+// @Description  Register a new user account
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body user.CreateUserInput true "User registration"
+// @Success      201  {object}  object{token=string}
+// @Failure      400  {object}  object{error=string}
+// @Failure      409  {object}  object{error=string}
+// @Router       /auth/register [post]
 func HandleRegister(uc *usecase.RegisterUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input user.CreateUserInput

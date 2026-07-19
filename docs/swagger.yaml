@@ -1,0 +1,705 @@
+basePath: /
+definitions:
+  usecase.CreateTransferInput:
+    properties:
+      amount:
+        type: number
+      to:
+        type: string
+    type: object
+  usecase.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  usecase.MineBlockInput:
+    properties:
+      nonce:
+        type: integer
+    type: object
+  user.CreateUserInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  user.UpdatePasswordInput:
+    properties:
+      newPassword:
+        type: string
+      oldPassword:
+        type: string
+    type: object
+  user.UpdateUserInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+host: localhost:4000
+info:
+  contact: {}
+  description: QuitoCoin blockchain API
+  title: QuitoCoin API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecase.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              token:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Login
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: User registration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              token:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Register
+      tags:
+      - Auth
+  /blockchain/blocks:
+    get:
+      consumes:
+      - application/json
+      description: List all blocks with pagination
+      parameters:
+      - description: Results per page (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Page offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              blocks:
+                type: array
+              total_count:
+                type: integer
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List blocks
+      tags:
+      - Blockchain
+  /blockchain/blocks/{index}:
+    get:
+      consumes:
+      - application/json
+      description: Get a specific block by its index
+      parameters:
+      - description: Block index
+        in: path
+        name: index
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              block:
+                properties:
+                  created_at:
+                    type: string
+                  hash:
+                    type: string
+                  index:
+                    type: integer
+                  miner:
+                    type: string
+                  nonce:
+                    type: integer
+                  previous_hash:
+                    type: string
+                  reward:
+                    type: number
+                  transactions:
+                    type: array
+                  tx_count:
+                    type: integer
+                type: object
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get block by index
+      tags:
+      - Blockchain
+  /blockchain/history:
+    get:
+      consumes:
+      - application/json
+      description: Get blocks associated with a user
+      parameters:
+      - description: Filter by role (miner, sender, receiver, any, all)
+        in: query
+        name: role
+        type: string
+      - description: Max records (default 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              blocks:
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user blocks
+      tags:
+      - Blockchain
+  /blockchain/history/{public_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get blocks associated with a user
+      parameters:
+      - description: User public ID (uses authenticated user if empty)
+        in: path
+        name: public_id
+        type: string
+      - description: Filter by role (miner, sender, receiver, any, all)
+        in: query
+        name: role
+        type: string
+      - description: Max records (default 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              blocks:
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user blocks
+      tags:
+      - Blockchain
+  /blockchain/mine:
+    post:
+      consumes:
+      - application/json
+      description: Submit a mined block with a valid nonce
+      parameters:
+      - description: Mining nonce
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecase.MineBlockInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              hash:
+                type: string
+              index:
+                type: integer
+              miner:
+                type: string
+              nonce:
+                type: integer
+              previous_hash:
+                type: string
+              reward:
+                type: number
+              transactions:
+                type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mine a block
+      tags:
+      - Blockchain
+  /blockchain/next-block:
+    get:
+      consumes:
+      - application/json
+      description: Get data needed to mine the next block
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: string
+              mined:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get next block data
+      tags:
+      - Blockchain
+  /me:
+    delete:
+      consumes:
+      - application/json
+      description: Delete authenticated user account
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete current user
+      tags:
+      - User
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user profile and balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              balance:
+                type: number
+              created_at:
+                type: string
+              email:
+                type: string
+              id:
+                type: string
+              name:
+                type: string
+              public_id:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user profile information
+      parameters:
+      - description: Update user data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateUserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              balance:
+                type: number
+              created_at:
+                type: string
+              email:
+                type: string
+              id:
+                type: string
+              name:
+                type: string
+              public_id:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user
+      tags:
+      - User
+  /me/password:
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user password
+      parameters:
+      - description: Password update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdatePasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update password
+      tags:
+      - User
+  /ranking:
+    get:
+      consumes:
+      - application/json
+      description: Get ranking of users by balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              richest:
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get richest users
+      tags:
+      - Ranking
+  /transfer:
+    post:
+      consumes:
+      - application/json
+      description: Create a new coin transfer transaction
+      parameters:
+      - description: Transfer data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/usecase.CreateTransferInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              amount:
+                type: number
+              from:
+                type: string
+              to:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create transfer
+      tags:
+      - Transfer
+  /transfer/pending:
+    get:
+      consumes:
+      - application/json
+      description: Get all pending transactions from the mempool
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              transactions:
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pending transactions
+      tags:
+      - Transfer
+  /transfer/pending/me:
+    get:
+      consumes:
+      - application/json
+      description: Get pending transactions for the authenticated user
+      parameters:
+      - description: Max transactions (default 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              transactions:
+                type: array
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my pending transactions
+      tags:
+      - Transfer
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

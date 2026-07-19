@@ -2,9 +2,14 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/luique16/quitocoin/internal/middleware"
 	"github.com/luique16/quitocoin/internal/provider"
 	"github.com/luique16/quitocoin/internal/usecase"
+
+	_ "github.com/luique16/quitocoin/docs"
 )
 
 func NewRouter(
@@ -66,6 +71,8 @@ func NewRouter(
 	{
 		utxo.GET("/ranking", HandleGetRichest(getRichest))
 	}
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	return r
 }

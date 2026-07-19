@@ -8,6 +8,15 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Get next block data
+// @Description  Get data needed to mine the next block
+// @Tags         Blockchain
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  object{mined=boolean,data=string}
+// @Failure      401  {object}  object{error=string}
+// @Router       /blockchain/next-block [get]
 func HandleGetNextBlock(uc *usecase.GetNextBlockDataUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)

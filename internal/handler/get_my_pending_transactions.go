@@ -9,6 +9,16 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Get my pending transactions
+// @Description  Get pending transactions for the authenticated user
+// @Tags         Transfer
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        limit query int false "Max transactions (default 100)"
+// @Success      200   {object}  object{transactions=array}
+// @Failure      401   {object}  object{error=string}
+// @Router       /transfer/pending/me [get]
 func HandleGetMyPendingTransactions(uc *usecase.GetMyPendingTransactionsUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)

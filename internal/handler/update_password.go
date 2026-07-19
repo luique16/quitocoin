@@ -9,6 +9,17 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Update password
+// @Description  Update authenticated user password
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body user.UpdatePasswordInput true "Password update"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object}  object{error=string}
+// @Failure      401  {object}  object{error=string}
+// @Router       /me/password [put]
 func HandleUpdatePassword(uc *usecase.UpdatePasswordUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)

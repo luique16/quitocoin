@@ -9,6 +9,19 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Get user blocks
+// @Description  Get blocks associated with a user
+// @Tags         Blockchain
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        public_id path     string false "User public ID (uses authenticated user if empty)"
+// @Param        role      query    string false "Filter by role (miner, sender, receiver, any, all)"
+// @Param        limit     query    int    false "Max records (default 100)"
+// @Success      200       {object}  object{blocks=array}
+// @Failure      401       {object}  object{error=string}
+// @Router       /blockchain/history/{public_id} [get]
+// @Router       /blockchain/history [get]
 func HandleGetUserBlocks(uc *usecase.GetUserBlocksUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		publicID := c.Param("public_id")

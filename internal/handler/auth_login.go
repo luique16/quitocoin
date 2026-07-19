@@ -7,6 +7,16 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Login
+// @Description  Authenticate user and return JWT token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body usecase.LoginInput true "Login credentials"
+// @Success      200  {object}  object{token=string}
+// @Failure      400  {object}  object{error=string}
+// @Failure      401  {object}  object{error=string}
+// @Router       /auth/login [post]
 func HandleLogin(uc *usecase.LoginUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input usecase.LoginInput

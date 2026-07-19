@@ -9,6 +9,18 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Update current user
+// @Description  Update authenticated user profile information
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body user.UpdateUserInput true "Update user data"
+// @Success      200  {object}  object{id=string,name=string,email=string,public_id=string,balance=number,created_at=string}
+// @Failure      400  {object}  object{error=string}
+// @Failure      401  {object}  object{error=string}
+// @Failure      404  {object}  object{error=string}
+// @Router       /me [put]
 func HandleUpdateMe(uc *usecase.UpdateUserUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims := middleware.GetClaims(c)

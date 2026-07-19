@@ -8,6 +8,17 @@ import (
 	"github.com/luique16/quitocoin/internal/usecase"
 )
 
+// @Summary      Mine a block
+// @Description  Submit a mined block with a valid nonce
+// @Tags         Blockchain
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body usecase.MineBlockInput true "Mining nonce"
+// @Success      200  {object}  object{hash=string,index=int,previous_hash=string,nonce=int,miner=string,reward=number,transactions=array}
+// @Failure      400  {object}  object{error=string}
+// @Failure      401  {object}  object{error=string}
+// @Router       /blockchain/mine [post]
 func HandleMineBlock(uc *usecase.MineBlockUseCase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input usecase.MineBlockInput
