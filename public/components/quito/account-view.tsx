@@ -2,20 +2,45 @@
 
 import { useEffect, useState } from "react"
 import { Check, KeyRound, Loader2, Mail, Trash2, User, X } from "lucide-react"
-import { USER } from "@/lib/quito-data"
+import { api } from "@/lib/api"
+import { formatDateTime } from "@/lib/quito-data"
+import { useAuth } from "./auth-provider"
 
-export function AccountView({ onLogout }: { onLogout: () => void }) {
-  const [name, setName] = useState(USER.name)
-  const [email, setEmail] = useState("joao@quitocoin.dev")
+export function AccountView() {
+  const { user, setUser, logout } = useAuth()
+  const [name, setName] = useState(user?.name ?? "")
+  const [email, setEmail] = useState(user?.email ?? "")
   const [savedFlash, setSavedFlash] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  function handleProfileSave(e: React.FormEvent) {
+  // Sincroniza os campos quando o usuário é carregado da API.
+  useEffect(() => {
+    if (user) {
+      setName(user.name)
+      setEmail(user.email)
+    }
+  }, [user])
+
+  async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault()
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 2200)
+    setProfileError(null)
+    setSaving(true)
+    try {
+      const updated = await api.updateMe({ name, email })
+      setUser(updated)
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2200)
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Falha ao atualizar o perfil.")
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const dirty = user ? name !== user.name || email !== user.email : false
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -55,20 +80,42 @@ export function AccountView({ onLogout }: { onLogout: () => void }) {
             </div>
           </label>
 
+          {profileError && (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs leading-relaxed text-red-200"
+            >
+              {profileError}
+            </p>
+          )}
+
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-yellow-300"
+              disabled={saving || !dirty}
+              className="flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Salvar alterações
+              {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {saving ? "Salvando…" : "Salvar alterações"}
             </button>
             {savedFlash && (
               <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                <Check className="size-4" /> Perfil atualizado
+                <Check className="size-4" aria-hidden="true" /> Perfil atualizado
               </span>
             )}
           </div>
         </form>
+
+        <dl className="mt-6 grid grid-cols-1 gap-3 border-t border-zinc-800 pt-5 sm:grid-cols-2">
+          <div>
+            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Código público</dt>
+            <dd className="mt-1 truncate font-mono text-xs text-zinc-400">{user?.public_id ?? "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Conta criada em</dt>
+            <dd className="mt-1 font-mono text-xs text-zinc-400">{formatDateTime(user?.created_at)}</dd>
+          </div>
+        </dl>
       </section>
 
       {/* Segurança */}
@@ -83,7 +130,7 @@ export function AccountView({ onLogout }: { onLogout: () => void }) {
             </span>
             <div>
               <p className="text-sm font-medium text-zinc-100">Senha</p>
-              <p className="text-xs text-zinc-500">Última alteração há 3 meses</p>
+              <p className="text-xs text-zinc-500">Use uma senha forte e exclusiva</p>
             </div>
           </div>
           <button
@@ -113,9 +160,7 @@ export function AccountView({ onLogout }: { onLogout: () => void }) {
       </section>
 
       {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
-      {deleteOpen && (
-        <DeleteAccountModal onClose={() => setDeleteOpen(false)} onConfirm={onLogout} />
-      )}
+      {deleteOpen && <DeleteAccountModal onClose={() => setDeleteOpen(false)} onDeleted={logout} />}
     </div>
   )
 }
@@ -154,7 +199,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
   const [error, setError] = useState("")
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (next.length < 6) {
       setStatus("error")
@@ -166,11 +211,21 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       setError("A confirmação não coincide com a nova senha.")
       return
     }
+    if (next === current) {
+      setStatus("error")
+      setError("A nova senha deve ser diferente da atual.")
+      return
+    }
+
     setError("")
     setStatus("loading")
-    setTimeout(() => {
+    try {
+      await api.updatePassword(current, next)
       onClose()
-    }, 1000)
+    } catch (err) {
+      setStatus("error")
+      setError(err instanceof Error ? err.message : "Não foi possível alterar a senha.")
+    }
   }
 
   return (
@@ -249,9 +304,23 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
+function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDeleted: () => void }) {
   const [text, setText] = useState("")
-  const canDelete = text.trim().toUpperCase() === "DELETAR"
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const canDelete = text.trim().toUpperCase() === "DELETAR" && !deleting
+
+  async function handleDelete() {
+    setError(null)
+    setDeleting(true)
+    try {
+      await api.deleteMe()
+      onDeleted()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível deletar a conta.")
+      setDeleting(false)
+    }
+  }
 
   return (
     <Modal onClose={onClose}>

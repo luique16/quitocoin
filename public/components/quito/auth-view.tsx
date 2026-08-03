@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { ArrowRight, Lock, Mail, User } from "lucide-react"
 import { QuitoWordmark } from "./logo"
+import { useAuth } from "./auth-provider"
+import { Spinner } from "./states"
+import { API_URL } from "@/lib/api"
 
 function NetworkIllustration() {
   const nodes = [
@@ -81,11 +84,21 @@ function Field({
   label,
   type,
   placeholder,
+  value,
+  onChange,
+  autoComplete,
+  required = true,
+  minLength,
 }: {
   icon: typeof Mail
   label: string
   type: string
   placeholder: string
+  value: string
+  onChange: (v: string) => void
+  autoComplete?: string
+  required?: boolean
+  minLength?: number
 }) {
   return (
     <label className="block">
@@ -95,6 +108,11 @@ function Field({
         <input
           type={type}
           placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={autoComplete}
+          required={required}
+          minLength={minLength}
           className="w-full rounded-xl border border-zinc-700 bg-zinc-950/60 py-2.5 pl-10 pr-3 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-shadow focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
         />
       </div>
@@ -103,7 +121,36 @@ function Field({
 }
 
 export function AuthView({ onEnter }: { onEnter: () => void }) {
+  const { login, register } = useAuth()
   const [mode, setMode] = useState<"login" | "register">("login")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setSubmitting(true)
+    try {
+      if (mode === "login") {
+        await login(email, password)
+      } else {
+        await register(name, email, password)
+      }
+      onEnter()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha na autenticação.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function switchMode(m: "login" | "register") {
+    setMode(m)
+    setError(null)
+  }
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
@@ -136,7 +183,7 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
                 <button
                   key={m}
                   type="button"
-                  onClick={() => setMode(m)}
+                  onClick={() => switchMode(m)}
                   className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
                     mode === m
                       ? "bg-zinc-800 text-zinc-50"
@@ -148,35 +195,60 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
               ))}
             </div>
 
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(e) => {
-                e.preventDefault()
-                onEnter()
-              }}
-            >
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               {mode === "register" && (
-                <Field icon={User} label="Nome" type="text" placeholder="Seu nome" />
+                <Field
+                  icon={User}
+                  label="Nome"
+                  type="text"
+                  placeholder="Seu nome"
+                  value={name}
+                  onChange={setName}
+                  autoComplete="name"
+                />
               )}
               <Field
                 icon={Mail}
                 label="E-mail"
                 type="email"
                 placeholder="voce@exemplo.com"
+                value={email}
+                onChange={setEmail}
+                autoComplete="email"
               />
               <Field
                 icon={Lock}
                 label="Senha"
                 type="password"
                 placeholder="••••••••"
+                value={password}
+                onChange={setPassword}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={mode === "register" ? 6 : undefined}
               />
+
+              {error && (
+                <p role="alert" className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs leading-relaxed text-red-200">
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-yellow-400 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_-6px] shadow-yellow-400/60 transition-all hover:bg-yellow-300 hover:shadow-yellow-400/80"
+                disabled={submitting}
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-yellow-400 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_-6px] shadow-yellow-400/60 transition-all hover:bg-yellow-300 hover:shadow-yellow-400/80 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Entrar na rede
-                <ArrowRight className="size-4" />
+                {submitting ? (
+                  <>
+                    <Spinner />
+                    {mode === "login" ? "Entrando…" : "Criando conta…"}
+                  </>
+                ) : (
+                  <>
+                    {mode === "login" ? "Entrar na rede" : "Criar conta"}
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -184,6 +256,7 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
           <p className="mt-6 text-center text-xs text-zinc-600">
             Projeto educacional — nenhum valor real é movimentado.
           </p>
+          <p className="mt-1 text-center font-mono text-[10px] text-zinc-700">API: {API_URL}</p>
         </div>
       </div>
     </div>
