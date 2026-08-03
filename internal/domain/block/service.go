@@ -174,8 +174,5 @@ func CalculateHash(index int, miner string, reward float32, previousHash string,
 
 	hash := sha256.Sum256([]byte(data))
 
-	fmt.Printf("Data: %s\n", data)
-	fmt.Printf("Hash: %s\n", hex.EncodeToString(hash[:]))
-
 	return hex.EncodeToString(hash[:])
 }

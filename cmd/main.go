@@ -1,7 +1,7 @@
 // @title           QuitoCoin API
 // @version         1.0
 // @description     QuitoCoin blockchain API
-// @host            localhost:4000
+// @host            localhost:8080
 // @BasePath        /
 
 // @securityDefinitions.apikey BearerAuth

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -11,6 +13,30 @@ import (
 
 	_ "github.com/luique16/quitocoin/docs"
 )
+
+// cors permite que o frontend (Next.js, em outra origem) consuma a API.
+func cors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		if origin != "" {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			c.Header(
+				"Access-Control-Allow-Headers",
+				"Content-Type, Authorization",
+			)
+			c.Header("Access-Control-Expose-Headers", "Content-Length")
+		}
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
 
 func NewRouter(
 	register *usecase.RegisterUseCase,
@@ -31,6 +57,7 @@ func NewRouter(
 	jwtProvider provider.JWTProvider,
 ) *gin.Engine {
 	r := gin.Default()
+	r.Use(cors())
 
 	auth := r.Group("/auth")
 	{
