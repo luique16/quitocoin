@@ -21,7 +21,7 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
-  // Sincroniza os campos quando o usuário é carregado da API.
+  // Syncs the fields when the user is loaded from the API.
   useEffect(() => {
     if (user) {
       setName(user.name)
@@ -39,7 +39,7 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2200)
     } catch (err) {
-      setProfileError(err instanceof Error ? err.message : "Falha ao atualizar o perfil.")
+      setProfileError(err instanceof Error ? err.message : "Failed to update the profile.")
     } finally {
       setSaving(false)
     }
@@ -50,18 +50,18 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
   return (
     <div className="mx-auto max-w-3xl">
       <header className="mb-8">
-        <p className="text-sm text-zinc-500">Configurações</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Sua conta</h1>
+        <p className="text-sm text-zinc-500">Settings</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Your account</h1>
       </header>
 
-      {/* Perfil */}
+      {/* Profile */}
       <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="mb-1 text-sm font-semibold text-zinc-100">Perfil</h2>
-        <p className="mb-5 text-xs text-zinc-500">Atualize suas informações públicas de identificação.</p>
+        <h2 className="mb-1 text-sm font-semibold text-zinc-100">Profile</h2>
+        <p className="mb-5 text-xs text-zinc-500">Update your public identifying information.</p>
 
         <form onSubmit={handleProfileSave} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-zinc-400">Nome</span>
+            <span className="text-xs font-medium text-zinc-400">Name</span>
             <div className="relative">
               <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
               <input
@@ -101,11 +101,11 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
               className="flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              {saving ? "Salvando…" : "Salvar alterações"}
+              {saving ? "Saving…" : "Save changes"}
             </button>
             {savedFlash && (
               <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                <Check className="size-4" aria-hidden="true" /> Perfil atualizado
+                <Check className="size-4" aria-hidden="true" /> Profile updated
               </span>
             )}
           </div>
@@ -113,20 +113,20 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
 
         <dl className="mt-6 grid grid-cols-1 gap-3 border-t border-zinc-800 pt-5 sm:grid-cols-2">
           <div>
-            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Código público</dt>
+            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Public code</dt>
             <dd className="mt-1 truncate font-mono text-xs text-zinc-400">{user?.public_id ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Conta criada em</dt>
+            <dt className="text-[10px] uppercase tracking-widest text-zinc-600">Account created on</dt>
             <dd className="mt-1 font-mono text-xs text-zinc-400">{formatDateTime(user?.created_at)}</dd>
           </div>
         </dl>
       </section>
 
-      {/* Segurança */}
+      {/* Security */}
       <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="mb-1 text-sm font-semibold text-zinc-100">Segurança</h2>
-        <p className="mb-5 text-xs text-zinc-500">Gerencie as credenciais de acesso à sua carteira.</p>
+        <h2 className="mb-1 text-sm font-semibold text-zinc-100">Security</h2>
+        <p className="mb-5 text-xs text-zinc-500">Manage the credentials to access your wallet.</p>
 
         <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-3.5">
           <div className="flex items-center gap-3">
@@ -134,8 +134,8 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
               <KeyRound className="size-4" />
             </span>
             <div>
-              <p className="text-sm font-medium text-zinc-100">Senha</p>
-              <p className="text-xs text-zinc-500">Use uma senha forte e exclusiva</p>
+              <p className="text-sm font-medium text-zinc-100">Password</p>
+              <p className="text-xs text-zinc-500">Use a strong, unique password</p>
             </div>
           </div>
           <button
@@ -143,16 +143,16 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
             onClick={() => setPasswordOpen(true)}
             className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:border-yellow-400 hover:text-yellow-400"
           >
-            Alterar senha
+            Change password
           </button>
         </div>
       </section>
 
-      {/* Zona de perigo */}
+      {/* Danger zone */}
       <section className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6">
-        <h2 className="mb-1 text-sm font-semibold text-red-400">Zona de perigo</h2>
+        <h2 className="mb-1 text-sm font-semibold text-red-400">Danger zone</h2>
         <p className="mb-5 text-xs text-zinc-400">
-          A exclusão da conta é permanente e remove sua carteira da rede. Esta ação não pode ser desfeita.
+          Account deletion is permanent and removes your wallet from the network. This action cannot be undone.
         </p>
         <button
           type="button"
@@ -160,7 +160,7 @@ export function AccountView({ onLogout }: { onLogout?: () => void }) {
           className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-zinc-50 transition-colors hover:bg-red-600"
         >
           <Trash2 className="size-4" />
-          Deletar conta
+          Delete account
         </button>
       </section>
 
@@ -208,17 +208,17 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     e.preventDefault()
     if (next.length < 6) {
       setStatus("error")
-      setError("A nova senha deve ter ao menos 6 caracteres.")
+      setError("The new password must have at least 6 characters.")
       return
     }
     if (next !== confirm) {
       setStatus("error")
-      setError("A confirmação não coincide com a nova senha.")
+      setError("The confirmation does not match the new password.")
       return
     }
     if (next === current) {
       setStatus("error")
-      setError("A nova senha deve ser diferente da atual.")
+      setError("The new password must be different from the current one.")
       return
     }
 
@@ -229,7 +229,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
       onClose()
     } catch (err) {
       setStatus("error")
-      setError(err instanceof Error ? err.message : "Não foi possível alterar a senha.")
+      setError(err instanceof Error ? err.message : "Could not change the password.")
     }
   }
 
@@ -237,13 +237,13 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     <Modal onClose={onClose}>
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h3 className="text-base font-semibold text-zinc-50">Alterar senha</h3>
-          <p className="mt-0.5 text-xs text-zinc-500">Informe a senha atual e escolha uma nova.</p>
+          <h3 className="text-base font-semibold text-zinc-50">Change password</h3>
+          <p className="mt-0.5 text-xs text-zinc-500">Enter your current password and choose a new one.</p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fechar"
+          aria-label="Close"
           className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
         >
           <X className="size-4" />
@@ -252,7 +252,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-zinc-400">Senha atual</span>
+          <span className="text-xs font-medium text-zinc-400">Current password</span>
           <input
             type="password"
             value={current}
@@ -263,7 +263,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-zinc-400">Nova senha</span>
+          <span className="text-xs font-medium text-zinc-400">New password</span>
           <input
             type="password"
             value={next}
@@ -274,7 +274,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-zinc-400">Confirmar nova senha</span>
+          <span className="text-xs font-medium text-zinc-400">Confirm new password</span>
           <input
             type="password"
             value={confirm}
@@ -293,7 +293,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-100"
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="submit"
@@ -301,7 +301,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             className="flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-yellow-300 disabled:opacity-60"
           >
             {status === "loading" && <Loader2 className="size-4 animate-spin" />}
-            {status === "loading" ? "Salvando..." : "Confirmar"}
+            {status === "loading" ? "Saving…" : "Confirm"}
           </button>
         </div>
       </form>
@@ -313,7 +313,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
   const [text, setText] = useState("")
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const canDelete = text.trim().toUpperCase() === "DELETAR" && !deleting
+  const canDelete = text.trim().toUpperCase() === "DELETE" && !deleting
 
   async function handleDelete() {
     setError(null)
@@ -322,7 +322,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
       await api.deleteMe()
       onDeleted()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível deletar a conta.")
+      setError(err instanceof Error ? err.message : "Could not delete the account.")
       setDeleting(false)
     }
   }
@@ -335,14 +335,14 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
             <Trash2 className="size-5" />
           </span>
           <div>
-            <h3 className="text-base font-semibold text-zinc-50">Deletar conta</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Esta ação é permanente.</p>
+            <h3 className="text-base font-semibold text-zinc-50">Delete account</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">This action is permanent.</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Fechar"
+          aria-label="Close"
           className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
         >
           <X className="size-4" />
@@ -350,13 +350,13 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
       </div>
 
       <p className="mb-4 text-sm text-zinc-400">
-        Digite <span className="font-mono font-semibold text-red-400">DELETAR</span> para confirmar a
-        remoção definitiva da sua carteira.
+        Type <span className="font-mono font-semibold text-red-400">DELETE</span> to confirm the
+        permanent removal of your wallet.
       </p>
       <input
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="DELETAR"
+        placeholder="DELETE"
         className="mb-5 w-full rounded-xl border border-zinc-700 bg-zinc-950/60 px-3 py-2.5 font-mono text-sm text-zinc-100 outline-none transition-shadow focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
       />
 
@@ -366,7 +366,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
           onClick={onClose}
           className="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-100"
         >
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -374,7 +374,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
           onClick={handleDelete}
           className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-zinc-50 transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Deletar permanentemente
+          Delete permanently
         </button>
       </div>
     </Modal>

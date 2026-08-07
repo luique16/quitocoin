@@ -8,9 +8,9 @@ const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'QuitoCoin — Rede Educacional',
+  title: 'QuitoCoin — Educational Network',
   description:
-    'Carteira e explorador da QuitoCoin (QTC), uma criptomoeda educacional. Transfira, explore a blockchain e minere blocos.',
+    'QuitoCoin (QTC) wallet and blockchain explorer, an educational cryptocurrency. Transfer, explore the blockchain and mine blocks.',
   generator: 'v0.app',
 }
 

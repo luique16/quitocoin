@@ -2,7 +2,7 @@ export type View = "auth" | "dashboard" | "transfer" | "explorer" | "mining" | "
 
 export function formatQtc(value: number | undefined | null, digits = 2): string {
   const n = typeof value === "number" && Number.isFinite(value) ? value : 0
-  return n.toLocaleString("pt-BR", {
+  return n.toLocaleString("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   })
@@ -18,7 +18,7 @@ export function formatDateTime(iso: string | undefined): string {
   if (!iso) return "—"
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return "—"
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+  return d.toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })
 }
 
 export function relativeTime(iso: string | undefined): string {
@@ -26,9 +26,9 @@ export function relativeTime(iso: string | undefined): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return "—"
   const mins = Math.floor((Date.now() - d.getTime()) / 60000)
-  if (mins < 1) return "agora"
-  if (mins < 60) return `${mins} min atrás`
+  if (mins < 1) return "now"
+  if (mins < 60) return `${mins} min ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} h atrás`
-  return `${Math.floor(hours / 24)} d atrás`
+  if (hours < 24) return `${hours} h ago`
+  return `${Math.floor(hours / 24)} d ago`
 }

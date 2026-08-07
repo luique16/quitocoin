@@ -141,7 +141,7 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
       }
       onEnter()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha na autenticação.")
+      setError(err instanceof Error ? err.message : "Authentication failed.")
     } finally {
       setSubmitting(false)
     }
@@ -161,11 +161,11 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-12">
           <h2 className="max-w-sm text-balance text-3xl font-semibold leading-tight text-zinc-50">
-            Uma blockchain educacional, limpa e transparente.
+            An educational, clean and transparent blockchain.
           </h2>
           <p className="mt-3 max-w-sm text-pretty text-sm leading-relaxed text-zinc-400">
-            Aprenda como transferências, blocos e mineração funcionam na prática
-            com a rede QuitoCoin.
+            Learn how transfers, blocks and mining work in practice with the QuitoCoin
+            network.
           </p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
-                  {m === "login" ? "Entrar" : "Registrar"}
+                  {m === "login" ? "Sign in" : "Register"}
                 </button>
               ))}
             </div>
@@ -199,9 +199,9 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
               {mode === "register" && (
                 <Field
                   icon={User}
-                  label="Nome"
+                  label="Name"
                   type="text"
-                  placeholder="Seu nome"
+                  placeholder="Your name"
                   value={name}
                   onChange={setName}
                   autoComplete="name"
@@ -209,16 +209,16 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
               )}
               <Field
                 icon={Mail}
-                label="E-mail"
+                label="Email"
                 type="email"
-                placeholder="voce@exemplo.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={setEmail}
                 autoComplete="email"
               />
               <Field
                 icon={Lock}
-                label="Senha"
+                label="Password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -241,11 +241,11 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
                 {submitting ? (
                   <>
                     <Spinner />
-                    {mode === "login" ? "Entrando…" : "Criando conta…"}
+                    {mode === "login" ? "Signing in…" : "Creating account…"}
                   </>
                 ) : (
                   <>
-                    {mode === "login" ? "Entrar na rede" : "Criar conta"}
+                    {mode === "login" ? "Sign in to the network" : "Create account"}
                     <ArrowRight className="size-4" />
                   </>
                 )}
@@ -254,7 +254,7 @@ export function AuthView({ onEnter }: { onEnter: () => void }) {
           </div>
 
           <p className="mt-6 text-center text-xs text-zinc-600">
-            Projeto educacional — nenhum valor real é movimentado.
+            Educational project — no real value is moved.
           </p>
           <p className="mt-1 text-center font-mono text-[10px] text-zinc-700">API: {API_URL}</p>
         </div>

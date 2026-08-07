@@ -1,6 +1,6 @@
-// Prova de trabalho da QuitoCoin.
-// O backend valida: SHA-256(fmt.Sprintf("%d%s", nonce, data))
-// Ou seja: o nonce em decimal vem PRIMEIRO, seguido da string `data`.
+// QuitoCoin proof of work.
+// The backend validates: SHA-256(fmt.Sprintf("%d%s", nonce, data))
+// That is: the decimal nonce comes FIRST, followed by the `data` string.
 
 export const DIFFICULTY = Number(process.env.NEXT_PUBLIC_MINING_DIFFICULTY || 7)
 export const TARGET_PREFIX = "0".repeat(DIFFICULTY)
@@ -29,8 +29,8 @@ export type MineResult = {
 }
 
 /**
- * Busca um nonce cujo hash comece com `TARGET_PREFIX`.
- * Roda em fatias para não travar a UI e reporta progresso periodicamente.
+ * Searches for a nonce whose hash starts with `TARGET_PREFIX`.
+ * Runs in slices to avoid freezing the UI and reports progress periodically.
  */
 export async function mineBlock(
   data: string,
@@ -69,7 +69,7 @@ export async function mineBlock(
       nonce++
     }
 
-    // Devolve o controle ao navegador entre as fatias.
+    // Yield control back to the browser between slices.
     await new Promise((r) => setTimeout(r, 0))
   }
 }

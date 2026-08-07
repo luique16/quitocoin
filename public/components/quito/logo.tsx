@@ -4,7 +4,7 @@ export function QuitoLogo({ className = "size-8" }: { className?: string }) {
       viewBox="0 0 48 48"
       className={className}
       role="img"
-      aria-label="Logo QuitoCoin"
+      aria-label="QuitoCoin logo"
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Coin */}

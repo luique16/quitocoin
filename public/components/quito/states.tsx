@@ -9,7 +9,7 @@ export function Spinner({ className = "size-4" }: { className?: string }) {
 export function LoadingRows({ rows = 4, className = "" }: { rows?: number; className?: string }) {
   return (
     <div className={`flex flex-col gap-2 ${className}`} aria-busy="true" aria-live="polite">
-      <span className="sr-only">Carregando dados</span>
+      <span className="sr-only">Loading data</span>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-800/60" />
       ))}
@@ -31,7 +31,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
           className="ml-6 inline-flex items-center gap-1.5 rounded-md border border-red-900/60 px-2.5 py-1 text-xs font-medium text-red-200 transition-colors hover:bg-red-950/60"
         >
           <RefreshCw className="size-3" aria-hidden="true" />
-          Tentar novamente
+          Try again
         </button>
       )}
     </div>
@@ -46,7 +46,7 @@ export function EmptyState({ message }: { message: string }) {
   )
 }
 
-export function ComingSoon({ label = "Em breve" }: { label?: string }) {
+export function ComingSoon({ label = "Coming soon" }: { label?: string }) {
   return (
     <span className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-yellow-500">
       {label}

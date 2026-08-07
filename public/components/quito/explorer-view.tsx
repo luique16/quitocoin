@@ -16,14 +16,14 @@ export function ExplorerView() {
     <div className="mx-auto max-w-6xl">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">Rede</p>
+          <p className="text-sm text-zinc-500">Network</p>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">
-            Explorador da Blockchain
+            Blockchain Explorer
           </h1>
         </div>
         <div className="flex items-center gap-3">
           <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-400">
-            {total} {total === 1 ? "bloco" : "blocos"} na cadeia
+            {total} {total === 1 ? "block" : "blocks"} on the chain
           </span>
           <button
             type="button"
@@ -34,7 +34,7 @@ export function ExplorerView() {
               className={`size-3 ${blocks.isValidating ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            Atualizar
+            Refresh
           </button>
         </div>
       </header>
@@ -43,18 +43,18 @@ export function ExplorerView() {
       <section className="mb-6">
         <div className="mb-3 flex items-center gap-2">
           <Box className="size-4 text-yellow-400" aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-zinc-100">Blocos recentes</h2>
+          <h2 className="text-sm font-semibold text-zinc-100">Recent blocks</h2>
         </div>
 
         {blocks.isLoading ? (
           <LoadingRows rows={3} />
         ) : blocks.error ? (
           <ErrorState
-            message={blocks.error instanceof Error ? blocks.error.message : "Erro ao carregar blocos."}
+            message={blocks.error instanceof Error ? blocks.error.message : "Error loading blocks."}
             onRetry={() => blocks.mutate()}
           />
         ) : list.length === 0 ? (
-          <EmptyState message="Nenhum bloco na cadeia ainda. Minere o primeiro bloco na aba Mineração." />
+          <EmptyState message="No blocks on the chain yet. Mine the first block in the Mining tab." />
         ) : (
           <div className="flex flex-nowrap gap-3 overflow-x-auto pb-3">
             {list.map((b) => (
@@ -70,7 +70,7 @@ export function ExplorerView() {
                 </div>
                 <p className="mt-3 text-[10px] uppercase tracking-widest text-zinc-600">Hash</p>
                 <p className="truncate font-mono text-xs text-zinc-300">{truncate(b.hash, 12, 6)}</p>
-                <p className="mt-2 text-[10px] uppercase tracking-widest text-zinc-600">Minerador</p>
+                <p className="mt-2 text-[10px] uppercase tracking-widest text-zinc-600">Miner</p>
                 <p className="truncate font-mono text-xs text-zinc-400">{truncate(b.miner, 8, 4)}</p>
                 <p className="mt-3 font-mono text-[11px] text-zinc-600">{relativeTime(b.created_at)}</p>
               </div>
@@ -98,18 +98,18 @@ function RichList() {
       <div className="mb-4 flex items-center gap-2">
         <Crown className="size-4 text-yellow-400" aria-hidden="true" />
         <h2 className="text-sm font-semibold text-zinc-100">Rich List</h2>
-        <span className="ml-auto text-xs text-zinc-500">Maiores saldos</span>
+        <span className="ml-auto text-xs text-zinc-500">Highest balances</span>
       </div>
 
       {ranking.isLoading ? (
         <LoadingRows rows={5} />
       ) : ranking.error ? (
         <ErrorState
-          message={ranking.error instanceof Error ? ranking.error.message : "Erro ao carregar o ranking."}
+          message={ranking.error instanceof Error ? ranking.error.message : "Error loading the ranking."}
           onRetry={() => ranking.mutate()}
         />
       ) : entries.length === 0 ? (
-        <EmptyState message="Ranking vazio no momento." />
+        <EmptyState message="The ranking is currently empty." />
       ) : (
         <ul className="flex flex-col gap-1">
           {entries.map((entry, i) => {
@@ -130,7 +130,7 @@ function RichList() {
                 </span>
                 <span className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-300">
                   {entry.public_id}
-                  {isUser && <span className="ml-2 text-[10px] text-yellow-400">você</span>}
+                  {isUser && <span className="ml-2 text-[10px] text-yellow-400">you</span>}
                 </span>
                 <span className="shrink-0 font-mono text-xs font-semibold text-zinc-100">
                   {formatQtc(entry.balance)}
@@ -149,7 +149,7 @@ function NetworkLogsSoon() {
     <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-black/50">
       <div className="flex shrink-0 items-center gap-2 border-b border-zinc-800 px-4 py-3">
         <span className="inline-flex size-2.5 rounded-full bg-zinc-600" />
-        <span className="text-xs font-semibold text-zinc-300">Logs da rede</span>
+        <span className="text-xs font-semibold text-zinc-300">Network logs</span>
         <ComingSoon />
         <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-zinc-700">
           websocket · offline
@@ -160,8 +160,8 @@ function NetworkLogsSoon() {
           <Radio className="size-5 text-zinc-600" aria-hidden="true" />
         </span>
         <p className="max-w-xs text-pretty text-center text-sm leading-relaxed text-zinc-500">
-          O streaming de eventos em tempo real via WebSocket será habilitado quando o endpoint estiver
-          disponível na API.
+          Real-time event streaming via WebSocket will be enabled once the endpoint is available
+          in the API.
         </p>
       </div>
     </div>

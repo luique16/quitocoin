@@ -49,18 +49,18 @@ export function MiningView() {
     const signal = abortRef.current
 
     try {
-      // 1. Busca os dados do próximo bloco na API.
+      // 1. Fetch the next block's data from the API.
       const next = await api.nextBlock()
       if (signal.aborted) return
 
       if (next.mined) {
-        setError("Este bloco já foi minerado por outro nó. Atualizando dados…")
+        setError("This block was already mined by another node. Updating data…")
         setState("idle")
         await Promise.all([nextBlock.mutate(), globalMutate("blocks")])
         return
       }
 
-      // 2. Resolve a prova de trabalho no navegador: SHA-256(`${nonce}${data}`).
+      // 2. Solve the proof of work in the browser: SHA-256(`${nonce}${data}`).
       const result = await mineBlock(next.data, {
         signal,
         onProgress: (p) => {
@@ -77,7 +77,7 @@ export function MiningView() {
       setHash(result.hash)
       setAttempts(result.attempts)
 
-      // 3. Envia o nonce encontrado para a API validar.
+      // 3. Send the found nonce to the API to validate it.
       setState("submitting")
       const block = await api.mine(result.nonce)
       if (signal.aborted) return
@@ -85,7 +85,7 @@ export function MiningView() {
       setMinedBlock(block)
       setState("found")
 
-      // 4. Atualiza saldo, mempool e cadeia.
+      // 4. Refresh balance, mempool and chain.
       await Promise.all([
         refreshUser(),
         mempool.mutate(),
@@ -95,7 +95,7 @@ export function MiningView() {
       ])
     } catch (err) {
       if (signal.aborted) return
-      setError(err instanceof Error ? err.message : "Falha ao minerar o bloco.")
+      setError(err instanceof Error ? err.message : "Failed to mine the block.")
       setState("idle")
     }
   }, [globalMutate, mempool, nextBlock, refreshUser])
@@ -122,11 +122,11 @@ export function MiningView() {
     <div className="mx-auto max-w-5xl">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">Consenso</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Mineração</h1>
+          <p className="text-sm text-zinc-500">Consensus</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Mining</h1>
         </div>
         <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-xs text-zinc-400">
-          dificuldade {DIFFICULTY} · alvo {TARGET_PREFIX}…
+          difficulty {DIFFICULTY} · target {TARGET_PREFIX}…
         </span>
       </header>
 
@@ -139,25 +139,25 @@ export function MiningView() {
             <button
               type="button"
               onClick={() => mempool.mutate()}
-              aria-label="Atualizar mempool"
+              aria-label="Refresh mempool"
               className="ml-auto text-zinc-500 transition-colors hover:text-zinc-300"
             >
               <RefreshCw className={`size-3.5 ${mempool.isValidating ? "animate-spin" : ""}`} />
             </button>
           </div>
           <p className="mb-4 text-xs text-zinc-500">
-            <span className="text-zinc-300">{pendingTxs.length}</span> tx aguardando confirmação
+            <span className="text-zinc-300">{pendingTxs.length}</span> tx awaiting confirmation
           </p>
 
           {mempool.isLoading ? (
             <LoadingRows rows={3} />
           ) : mempool.error ? (
             <ErrorState
-              message={mempool.error instanceof Error ? mempool.error.message : "Erro ao carregar."}
+              message={mempool.error instanceof Error ? mempool.error.message : "Error loading."}
               onRetry={() => mempool.mutate()}
             />
           ) : pendingTxs.length === 0 ? (
-            <EmptyState message="Mempool vazio. Blocos podem ser minerados apenas com a recompensa." />
+            <EmptyState message="Mempool is empty. Blocks can only be mined with the reward." />
           ) : (
             <ul className="flex flex-col gap-2">
               {pendingTxs.map((tx, i) => (
@@ -197,10 +197,10 @@ export function MiningView() {
           >
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Cpu className="size-4 text-yellow-400" aria-hidden="true" />
-              Console de mineração
+              Mining console
             </div>
 
-            {/* Botão principal */}
+            {/* Main button */}
             <div className="my-6 flex justify-center">
               {state !== "found" ? (
                 <button
@@ -216,17 +216,17 @@ export function MiningView() {
                   {state === "submitting" ? (
                     <>
                       <RefreshCw className="size-7 animate-spin" aria-hidden="true" />
-                      Validando…
+                      Validating…
                     </>
                   ) : state === "mining" ? (
                     <>
                       <Square className="size-7" aria-hidden="true" />
-                      Parar
+                      Stop
                     </>
                   ) : (
                     <>
                       <Pickaxe className="size-8" aria-hidden="true" />
-                      Iniciar mineração
+                      Start mining
                     </>
                   )}
                 </button>
@@ -237,17 +237,17 @@ export function MiningView() {
                   className="flex size-40 flex-col items-center justify-center gap-2 rounded-full bg-emerald-500 text-sm font-semibold text-zinc-950 shadow-[0_0_40px_-6px] shadow-emerald-400/70 transition-all hover:scale-105"
                 >
                   <Sparkles className="size-8" aria-hidden="true" />
-                  Minerar novamente
+                  Mine again
                 </button>
               )}
             </div>
 
-            {/* Leitura ao vivo */}
+            {/* Live readout */}
             <div className="rounded-xl border border-zinc-800 bg-black/50 p-4 font-mono text-xs">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
                 <span className="text-zinc-600">nonce</span>
                 <span className={busy ? "text-yellow-400" : "text-zinc-300"}>
-                  {nonce.toLocaleString("pt-BR")}
+                  {nonce.toLocaleString("en-US")}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2 border-b border-zinc-800 py-2">
@@ -261,12 +261,12 @@ export function MiningView() {
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 text-zinc-600">
-                <span>tentativas {attempts.toLocaleString("pt-BR")}</span>
-                <span>{hashRate ? `${hashRate.toLocaleString("pt-BR")} H/s` : "—"}</span>
+                <span>attempts {attempts.toLocaleString("en-US")}</span>
+                <span>{hashRate ? `${hashRate.toLocaleString("en-US")} H/s` : "—"}</span>
               </div>
             </div>
 
-            {/* Mensagens de estado */}
+            {/* State messages */}
             {error && (
               <p
                 role="alert"
@@ -279,7 +279,7 @@ export function MiningView() {
               <div className="mt-4 flex flex-col items-center gap-1 rounded-xl border border-emerald-400/40 bg-emerald-500/10 py-3 text-sm font-semibold text-emerald-400">
                 <span className="flex items-center gap-2">
                   <Sparkles className="size-4" aria-hidden="true" />
-                  Bloco #{minedBlock.index} minerado! +{formatQtc(minedBlock.reward)} QTC
+                  Block #{minedBlock.index} mined! +{formatQtc(minedBlock.reward)} QTC
                 </span>
                 <span className="font-mono text-[10px] font-normal text-emerald-300/70">
                   nonce {minedBlock.nonce} · {truncate(minedBlock.hash, 16, 8)}
@@ -288,17 +288,17 @@ export function MiningView() {
             )}
             {state === "idle" && !error && (
               <p className="mt-4 text-center text-xs text-zinc-600">
-                Pressione iniciar para buscar um hash com {DIFFICULTY} zeros à esquerda.
+                Press start to search for a hash with {DIFFICULTY} leading zeros.
               </p>
             )}
             {state === "mining" && (
               <p className="mt-4 text-center text-xs text-zinc-500">
-                Calculando SHA-256(nonce + data) no navegador…
+                Computing SHA-256(nonce + data) in the browser…
               </p>
             )}
             {state === "submitting" && (
               <p className="mt-4 text-center text-xs text-zinc-500">
-                Enviando o nonce para validação na API…
+                Sending the nonce for validation to the API…
               </p>
             )}
           </div>

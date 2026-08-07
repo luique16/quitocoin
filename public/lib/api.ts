@@ -1,5 +1,5 @@
-// Cliente HTTP da API QuitoCoin.
-// Base URL configurável — o swagger aponta para localhost:4000.
+// QuitoCoin API HTTP client.
+// Configurable base URL — the swagger points to localhost:4000.
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "")
 
 export const TOKEN_KEY = "quito.token"
@@ -40,7 +40,7 @@ async function request<T>(path: string, { method = "GET", body, auth = true }: O
 
   if (auth) {
     const token = getToken()
-    if (!token) throw new ApiError("Sessão expirada. Faça login novamente.", 401)
+    if (!token) throw new ApiError("Session expired. Please sign in again.", 401)
     headers.Authorization = `Bearer ${token}`
   }
 
@@ -53,7 +53,7 @@ async function request<T>(path: string, { method = "GET", body, auth = true }: O
     })
   } catch {
     throw new ApiError(
-      `Não foi possível conectar à API em ${API_URL}. Verifique se o servidor está rodando e se o CORS está habilitado.`,
+      `Could not connect to the API at ${API_URL}. Check that the server is running and that CORS is enabled.`,
       0,
     )
   }

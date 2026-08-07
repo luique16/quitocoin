@@ -35,31 +35,31 @@ export function TransferView() {
     const value = Number(normalized)
 
     if (!recipient.trim()) {
-      setError("Informe o código público do destinatário.")
+      setError("Enter the recipient's public code.")
       return
     }
     if (!Number.isFinite(value) || value <= 0) {
-      setError("Informe uma quantidade válida maior que zero.")
+      setError("Enter a valid amount greater than zero.")
       return
     }
     if (value > balance) {
-      setError("Saldo insuficiente para essa transferência.")
+      setError("Insufficient balance for this transfer.")
       return
     }
     if (recipient.trim() === publicId) {
-      setError("Você não pode transferir para o seu próprio código.")
+      setError("You cannot transfer to your own code.")
       return
     }
 
     setSubmitting(true)
     try {
       const res = await api.transfer(recipient.trim(), value)
-      setSuccess(`Transferência de ${formatQtc(res.amount)} QTC enviada para o mempool.`)
+      setSuccess(`Transfer of ${formatQtc(res.amount)} QTC sent to the mempool.`)
       setRecipient("")
       setAmount("")
       await Promise.all([pending.mutate(), refreshUser()])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao criar a transferência.")
+      setError(err instanceof Error ? err.message : "Failed to create the transfer.")
     } finally {
       setSubmitting(false)
     }
@@ -71,33 +71,33 @@ export function TransferView() {
   return (
     <div className="mx-auto max-w-5xl">
       <header className="mb-8">
-        <p className="text-sm text-zinc-500">Carteira</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Transferir</h1>
+        <p className="text-sm text-zinc-500">Wallet</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Transfer</h1>
       </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Formulário */}
+        {/* Form */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="text-sm font-semibold text-zinc-100">Enviar QuitoCoins</h2>
+          <h2 className="text-sm font-semibold text-zinc-100">Send QuitoCoins</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Saldo disponível: <span className="text-yellow-400">{formatQtc(balance)} QTC</span>
+            Available balance: <span className="text-yellow-400">{formatQtc(balance)} QTC</span>
           </p>
 
           <form className="mt-6 flex flex-col gap-5" onSubmit={handleSubmit}>
             <label className="block">
               <span className="mb-1.5 block text-xs font-medium text-zinc-400">
-                Código público do destinatário
+                Recipient public code
               </span>
               <input
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="Cole o código público"
+                placeholder="Paste the public code"
                 className="w-full rounded-xl border border-zinc-700 bg-zinc-950/60 px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-shadow focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
               />
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-zinc-400">Quantidade</span>
+              <span className="mb-1.5 block text-xs font-medium text-zinc-400">Amount</span>
               <div className="relative">
                 <input
                   value={amount}
@@ -111,7 +111,7 @@ export function TransferView() {
                   onClick={() => setAmount(String(balance))}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-yellow-400 transition-colors hover:bg-zinc-700"
                 >
-                  MÁX
+                  MAX
                 </button>
               </div>
             </label>
@@ -141,24 +141,24 @@ export function TransferView() {
               {submitting ? (
                 <>
                   <Spinner />
-                  Enviando…
+                  Sending…
                 </>
               ) : (
                 <>
                   <Send className="size-4" aria-hidden="true" />
-                  Enviar QuitoCoins
+                  Send QuitoCoins
                 </>
               )}
             </button>
           </form>
         </div>
 
-        {/* Recibos */}
+        {/* Receipts */}
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
             <div className="mb-3 flex items-center gap-2">
               <Clock className="size-4 text-yellow-400" aria-hidden="true" />
-              <h3 className="text-sm font-semibold text-zinc-100">Pendentes</h3>
+              <h3 className="text-sm font-semibold text-zinc-100">Pending</h3>
               <span className="ml-auto rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
                 {pendingItems.length}
               </span>
@@ -167,11 +167,11 @@ export function TransferView() {
               <LoadingRows rows={2} />
             ) : pending.error ? (
               <ErrorState
-                message={pending.error instanceof Error ? pending.error.message : "Erro ao carregar."}
+                message={pending.error instanceof Error ? pending.error.message : "Error loading."}
                 onRetry={() => pending.mutate()}
               />
             ) : pendingItems.length === 0 ? (
-              <EmptyState message="Nenhuma transferência aguardando confirmação." />
+              <EmptyState message="No transfers awaiting confirmation." />
             ) : (
               <ul className="flex flex-col gap-2">
                 {pendingItems.map((tx, i) => (
@@ -184,7 +184,7 @@ export function TransferView() {
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
             <div className="mb-3 flex items-center gap-2">
               <CheckCircle2 className="size-4 text-emerald-400" aria-hidden="true" />
-              <h3 className="text-sm font-semibold text-zinc-100">Enviadas e confirmadas</h3>
+              <h3 className="text-sm font-semibold text-zinc-100">Sent and confirmed</h3>
               <span className="ml-auto rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
                 {completedItems.length}
               </span>
@@ -193,11 +193,11 @@ export function TransferView() {
               <LoadingRows rows={2} />
             ) : sentHistory.error ? (
               <ErrorState
-                message={sentHistory.error instanceof Error ? sentHistory.error.message : "Erro ao carregar."}
+                message={sentHistory.error instanceof Error ? sentHistory.error.message : "Error loading."}
                 onRetry={() => sentHistory.mutate()}
               />
             ) : completedItems.length === 0 ? (
-              <EmptyState message="Você ainda não enviou transferências confirmadas." />
+              <EmptyState message="You haven't sent any confirmed transfers yet." />
             ) : (
               <ul className="flex flex-col gap-2">
                 {completedItems.map((tx, i) => (
@@ -243,7 +243,7 @@ function Receipt({
       <div className="min-w-0">
         <p className="truncate font-mono text-xs text-zinc-300">{truncate(counterparty as string)}</p>
         <p className="text-[11px] text-zinc-600">
-          {outgoing ? "Para" : "De"} · {relativeTime(tx.created_at)}
+          {outgoing ? "To" : "From"} · {relativeTime(tx.created_at)}
         </p>
       </div>
       <div className="text-right">
@@ -256,7 +256,7 @@ function Receipt({
             accent === "pending" ? "text-yellow-400" : "text-emerald-400"
           }`}
         >
-          {accent === "pending" ? "Confirmando" : "Confirmado"}
+          {accent === "pending" ? "Confirming" : "Confirmed"}
         </span>
       </div>
     </li>

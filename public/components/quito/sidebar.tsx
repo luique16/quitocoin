@@ -6,10 +6,10 @@ import { QuitoWordmark } from "./logo"
 
 const NAV: { id: View; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "transfer", label: "Transferir", icon: Send },
+  { id: "transfer", label: "Transfer", icon: Send },
   { id: "explorer", label: "Explorer", icon: Boxes },
-  { id: "mining", label: "Mineração", icon: Pickaxe },
-  { id: "account", label: "Conta", icon: UserCog },
+  { id: "mining", label: "Mining", icon: Pickaxe },
+  { id: "account", label: "Account", icon: UserCog },
 ]
 
 export function Sidebar({
@@ -54,7 +54,7 @@ export function Sidebar({
         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-red-400"
       >
         <LogOut className="size-[18px]" />
-        Sair da rede
+        Sign out
       </button>
     </aside>
   )

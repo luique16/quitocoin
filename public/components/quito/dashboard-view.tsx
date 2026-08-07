@@ -76,20 +76,20 @@ export function DashboardView() {
   return (
     <div className="mx-auto max-w-5xl">
       <header className="mb-8">
-        <p className="text-sm text-zinc-500">Visão geral</p>
+        <p className="text-sm text-zinc-500">Overview</p>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Dashboard</h1>
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Saldo */}
+        {/* Balance */}
         <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-6 md:col-span-2">
           <div className="absolute -right-16 -top-16 size-48 rounded-full bg-yellow-400/10 blur-3xl" />
           <div className="relative">
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Wallet className="size-4 text-yellow-400" aria-hidden="true" />
-              Olá, {user?.name ?? "—"}!
+              Hello, {user?.name ?? "—"}!
             </div>
-            <p className="mt-6 text-xs uppercase tracking-widest text-zinc-500">Saldo disponível</p>
+            <p className="mt-6 text-xs uppercase tracking-widest text-zinc-500">Available balance</p>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-5xl font-bold tracking-tight text-yellow-400">
                 {formatQtc(user?.balance)}
@@ -99,53 +99,53 @@ export function DashboardView() {
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">
                 <Pickaxe className="size-3.5 text-yellow-400" aria-hidden="true" />
-                {minedCount} {minedCount === 1 ? "bloco minerado" : "blocos minerados"}
+                {minedCount} {minedCount === 1 ? "block mined" : "blocks mined"}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-300">
                 <Clock className="size-3.5 text-zinc-400" aria-hidden="true" />
-                {pendingCount} {pendingCount === 1 ? "pendente" : "pendentes"}
+                {pendingCount} {pendingCount === 1 ? "pending" : "pending"}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Identidade */}
+        {/* Identity */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Código público</p>
-          <p className="mt-3 text-sm text-zinc-400">Sua identidade na rede</p>
+          <p className="text-xs uppercase tracking-widest text-zinc-500">Public code</p>
+          <p className="mt-3 text-sm text-zinc-400">Your identity on the network</p>
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-2 pl-3">
             <span className="flex-1 truncate font-mono text-xs text-zinc-300">{publicId || "—"}</span>
             <button
               type="button"
               onClick={copy}
               disabled={!publicId}
-              aria-label="Copiar código público"
+              aria-label="Copy public code"
               className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 transition-colors hover:bg-yellow-400 hover:text-zinc-950 disabled:opacity-50"
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             </button>
           </div>
           <p className="mt-3 font-mono text-[11px] text-zinc-600">
-            {copied ? "Copiado para a área de transferência" : "Toque para copiar"}
+            {copied ? "Copied to clipboard" : "Tap to copy"}
           </p>
         </div>
 
-        {/* Atividade recente */}
+        {/* Recent activity */}
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 md:col-span-3">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-100">Atividade recente</h2>
-            <span className="text-xs text-zinc-500">Confirmada na blockchain</span>
+            <h2 className="text-sm font-semibold text-zinc-100">Recent activity</h2>
+            <span className="text-xs text-zinc-500">Confirmed on the blockchain</span>
           </div>
 
           {history.isLoading ? (
             <LoadingRows rows={3} />
           ) : history.error ? (
             <ErrorState
-              message={history.error instanceof Error ? history.error.message : "Erro ao carregar histórico."}
+              message={history.error instanceof Error ? history.error.message : "Error loading history."}
               onRetry={() => history.mutate()}
             />
           ) : recent.length === 0 ? (
-            <EmptyState message="Nenhuma atividade ainda. Minere um bloco ou receba uma transferência." />
+            <EmptyState message="No activity yet. Mine a block or receive a transfer." />
           ) : (
             <ul className="flex flex-col divide-y divide-zinc-800">
               {recent.map((item) => {
@@ -168,10 +168,10 @@ export function DashboardView() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-zinc-100">
-                        {isMined ? "Bloco minerado" : isReceived ? "Recebido" : "Enviado"}
+                        {isMined ? "Block mined" : isReceived ? "Received" : "Sent"}
                       </p>
                       <p className="truncate font-mono text-xs text-zinc-500">
-                        {isMined ? `Bloco #${item.blockIndex}` : truncate(item.otherParty)}
+                        {isMined ? `Block #${item.blockIndex}` : truncate(item.otherParty)}
                       </p>
                     </div>
                     <div className="text-right">
