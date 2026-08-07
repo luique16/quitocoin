@@ -3,40 +3,47 @@
 import { useState } from "react"
 import useSWR from "swr"
 import { ArrowDownLeft, ArrowUpRight, Check, Copy, Clock, Pickaxe, Wallet } from "lucide-react"
-import { api, type Block, type Transaction } from "@/lib/api"
+import { api, type HistoryRecord } from "@/lib/api"
 import { formatQtc, relativeTime, truncate } from "@/lib/quito-data"
 import { useAuth } from "./auth-provider"
 import { EmptyState, ErrorState, LoadingRows } from "./states"
 
-type FlatTx = {
+type RecentItem = {
   key: string
-  from?: string
-  to?: string
+  kind: "miner" | "sent" | "received"
   amount: number
-  received: boolean
+  positive: boolean
   when?: string
+  blockIndex: number
+  otherParty?: string
 }
 
-function flatten(blocks: Block[] | null | undefined, publicId: string): FlatTx[] {
-  if (!blocks) return []
-  const out: FlatTx[] = []
-  for (const block of blocks) {
-    const txs = Array.isArray(block.transactions) ? block.transactions : []
-    txs.forEach((tx: Transaction, i) => {
-      const from = typeof tx.from === "string" ? tx.from : undefined
-      const to = typeof tx.to === "string" ? tx.to : undefined
-      if (from !== publicId && to !== publicId) return
-      out.push({
-        key: `${block.index}-${i}`,
-        from,
-        to,
-        amount: typeof tx.amount === "number" ? tx.amount : 0,
-        received: to === publicId,
-        when: typeof tx.created_at === "string" ? tx.created_at : block.created_at,
-      })
-    })
-  }
-  return out
+function toRecent(records: HistoryRecord[] | null | undefined): RecentItem[] {
+  if (!records) return []
+  return records.map((r, i) => {
+    const base = { key: `${r.block_index}-${r.type}-${i}`, blockIndex: r.block_index }
+    if (r.type === "miner") {
+      return { ...base, kind: "miner", amount: r.value ?? 0, positive: true, when: r.date }
+    }
+    if (r.type === "receiver") {
+      return {
+        ...base,
+        kind: "received",
+        amount: r.value ?? 0,
+        positive: true,
+        when: r.date,
+        otherParty: r.other_party,
+      }
+    }
+    return {
+      ...base,
+      kind: "sent",
+      amount: r.value ?? 0,
+      positive: false,
+      when: r.date,
+      otherParty: r.other_party,
+    }
+  })
 }
 
 export function DashboardView() {
@@ -55,7 +62,7 @@ export function DashboardView() {
     revalidateOnFocus: false,
   })
 
-  const recent = flatten(history.data?.blocks, publicId).slice(0, 5)
+  const recent = toRecent(history.data?.blocks).slice(0, 8)
   const minedCount = mined.data?.blocks?.length ?? 0
   const pendingCount = pending.data?.transactions?.length ?? 0
 
@@ -138,39 +145,49 @@ export function DashboardView() {
               onRetry={() => history.mutate()}
             />
           ) : recent.length === 0 ? (
-            <EmptyState message="Nenhuma transação confirmada ainda. Minere um bloco ou receba uma transferência." />
+            <EmptyState message="Nenhuma atividade ainda. Minere um bloco ou receba uma transferência." />
           ) : (
             <ul className="flex flex-col divide-y divide-zinc-800">
-              {recent.map((tx) => (
-                <li key={tx.key} className="flex items-center gap-4 py-3">
-                  <span
-                    className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
-                      tx.received ? "bg-emerald-500/10" : "bg-zinc-800"
-                    }`}
-                  >
-                    {tx.received ? (
-                      <ArrowDownLeft className="size-5 text-emerald-400" aria-hidden="true" />
-                    ) : (
-                      <ArrowUpRight className="size-5 text-zinc-400" aria-hidden="true" />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-100">{tx.received ? "Recebido" : "Enviado"}</p>
-                    <p className="truncate font-mono text-xs text-zinc-500">
-                      {tx.received ? truncate(tx.from) : truncate(tx.to)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={`text-sm font-semibold ${tx.received ? "text-emerald-400" : "text-zinc-300"}`}
+              {recent.map((item) => {
+                const isReceived = item.kind === "received"
+                const isMined = item.kind === "miner"
+                return (
+                  <li key={item.key} className="flex items-center gap-4 py-3">
+                    <span
+                      className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+                        isReceived ? "bg-emerald-500/10" : isMined ? "bg-yellow-400/10" : "bg-zinc-800"
+                      }`}
                     >
-                      {tx.received ? "+" : "−"}
-                      {formatQtc(tx.amount)}
-                    </p>
-                    <p className="text-xs text-zinc-600">{relativeTime(tx.when)}</p>
-                  </div>
-                </li>
-              ))}
+                      {isReceived ? (
+                        <ArrowDownLeft className="size-5 text-emerald-400" aria-hidden="true" />
+                      ) : isMined ? (
+                        <Pickaxe className="size-5 text-yellow-400" aria-hidden="true" />
+                      ) : (
+                        <ArrowUpRight className="size-5 text-zinc-400" aria-hidden="true" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-zinc-100">
+                        {isMined ? "Bloco minerado" : isReceived ? "Recebido" : "Enviado"}
+                      </p>
+                      <p className="truncate font-mono text-xs text-zinc-500">
+                        {isMined ? `Bloco #${item.blockIndex}` : truncate(item.otherParty)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`text-sm font-semibold ${
+                          isReceived ? "text-emerald-400" : isMined ? "text-yellow-400" : "text-zinc-300"
+                        }`}
+                      >
+                        {item.positive ? "+" : "−"}
+                        {formatQtc(item.amount)}
+                      </p>
+                      <p className="text-xs text-zinc-600">{relativeTime(item.when)}</p>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>

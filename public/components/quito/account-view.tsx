@@ -6,8 +6,13 @@ import { api } from "@/lib/api"
 import { formatDateTime } from "@/lib/quito-data"
 import { useAuth } from "./auth-provider"
 
-export function AccountView() {
+export function AccountView({ onLogout }: { onLogout?: () => void }) {
   const { user, setUser, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    onLogout?.()
+  }
   const [name, setName] = useState(user?.name ?? "")
   const [email, setEmail] = useState(user?.email ?? "")
   const [savedFlash, setSavedFlash] = useState(false)
@@ -160,7 +165,7 @@ export function AccountView() {
       </section>
 
       {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
-      {deleteOpen && <DeleteAccountModal onClose={() => setDeleteOpen(false)} onDeleted={logout} />}
+      {deleteOpen && <DeleteAccountModal onClose={() => setDeleteOpen(false)} onDeleted={handleLogout} />}
     </div>
   )
 }
@@ -366,7 +371,7 @@ function DeleteAccountModal({ onClose, onDeleted }: { onClose: () => void; onDel
         <button
           type="button"
           disabled={!canDelete}
-          onClick={onConfirm}
+          onClick={handleDelete}
           className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-zinc-50 transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Deletar permanentemente

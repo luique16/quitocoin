@@ -3,7 +3,7 @@
 import { useState } from "react"
 import useSWR from "swr"
 import { CheckCircle2, Clock, Send } from "lucide-react"
-import { api, type Block, type Transaction } from "@/lib/api"
+import { api, type HistoryRecord, type Transaction } from "@/lib/api"
 import { formatQtc, relativeTime, truncate } from "@/lib/quito-data"
 import { useAuth } from "./auth-provider"
 import { EmptyState, ErrorState, LoadingRows, Spinner } from "./states"
@@ -212,16 +212,17 @@ export function TransferView() {
   )
 }
 
-function flattenSent(blocks: Block[] | null | undefined, publicId: string): Transaction[] {
-  if (!blocks) return []
-  const out: Transaction[] = []
-  for (const block of blocks) {
-    const txs = Array.isArray(block.transactions) ? block.transactions : []
-    for (const tx of txs) {
-      if (tx.from === publicId) out.push({ ...tx, created_at: tx.created_at ?? block.created_at })
-    }
-  }
-  return out.slice(0, 10)
+function flattenSent(records: HistoryRecord[] | null | undefined, publicId: string): Transaction[] {
+  if (!records) return []
+  return records
+    .filter((r) => r.type === "sender")
+    .slice(0, 10)
+    .map((r) => ({
+      from: publicId,
+      to: r.other_party,
+      amount: r.value,
+      created_at: r.date,
+    }))
 }
 
 function Receipt({

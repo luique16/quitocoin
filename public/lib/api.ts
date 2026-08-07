@@ -2,19 +2,22 @@
 // Base URL configurável — o swagger aponta para localhost:4000.
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "")
 
-const TOKEN_KEY = "quito.token"
+export const TOKEN_KEY = "quito.token"
+const TOKEN_MAX_AGE = 60 * 60 * 24 * 7
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null
-  return window.localStorage.getItem(TOKEN_KEY)
+  const prefix = `${TOKEN_KEY}=`
+  const found = document.cookie.split("; ").find((c) => c.startsWith(prefix))
+  return found ? decodeURIComponent(found.slice(prefix.length)) : null
 }
 
 export function setToken(token: string) {
-  window.localStorage.setItem(TOKEN_KEY, token)
+  document.cookie = `${TOKEN_KEY}=${encodeURIComponent(token)}; Path=/; Max-Age=${TOKEN_MAX_AGE}; SameSite=Lax`
 }
 
 export function clearToken() {
-  window.localStorage.removeItem(TOKEN_KEY)
+  document.cookie = `${TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
 }
 
 export class ApiError extends Error {
@@ -113,6 +116,14 @@ export type RankingEntry = {
   balance: number
 }
 
+export type HistoryRecord = {
+  type: "miner" | "sender" | "receiver"
+  value: number
+  date: string
+  other_party: string
+  block_index: number
+}
+
 export type NextBlock = {
   data: string
   mined: boolean
@@ -148,7 +159,7 @@ export const api = {
   block: (index: number) => request<{ block: Block }>(`/blockchain/blocks/${index}`),
 
   history: (role = "any", limit = 100) =>
-    request<{ blocks: Block[] | null }>(`/blockchain/history?role=${role}&limit=${limit}`),
+    request<{ blocks: HistoryRecord[] | null }>(`/blockchain/history?role=${role}&limit=${limit}`),
 
   nextBlock: () => request<NextBlock>("/blockchain/next-block"),
 
