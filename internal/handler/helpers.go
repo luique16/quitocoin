@@ -38,6 +38,7 @@ func mapError(err error) int {
 		errors.Is(err, errorpkg.ErrWeakPassword),
 		errors.Is(err, errorpkg.ErrInvalidID),
 		errors.Is(err, errorpkg.ErrNegativeAmount),
+		errors.Is(err, errorpkg.ErrAmountBelowFee),
 		errors.Is(err, errorpkg.ErrInvalidBlockHash),
 		errors.Is(err, errorpkg.ErrInvalidNonce),
 		errors.Is(err, errorpkg.ErrInvalidBlockIndex),

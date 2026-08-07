@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 
+	"github.com/luique16/quitocoin/internal/domain/block"
 	"github.com/luique16/quitocoin/internal/domain/transaction"
 	"github.com/luique16/quitocoin/internal/domain/user"
 	errorpkg "github.com/luique16/quitocoin/internal/error"
@@ -34,6 +35,9 @@ func (uc *CreateTransferUseCase) Execute(ctx context.Context, from string, input
 	}
 	if input.Amount <= 0 {
 		return nil, errorpkg.ErrNegativeAmount
+	}
+	if input.Amount <= block.RewardPerTransaction {
+		return nil, errorpkg.ErrAmountBelowFee
 	}
 	if from == "" {
 		return nil, errorpkg.ErrInvalidID
