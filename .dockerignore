@@ -1,0 +1,9 @@
+.git
+.env
+quitocoin
+miner
+public/node_modules
+public/.next
+public/out
+node_modules
+tmp
