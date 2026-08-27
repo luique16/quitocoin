@@ -2,6 +2,7 @@ databases:
   - name: postgres-inst
     databaseName: appdb
     user: appuser
+    plan: free
     region: oregon
 
 services:
@@ -14,6 +15,7 @@ services:
   - type: web
     name: backend-go
     env: docker
+    plan: free
     dockerfilePath: ./Dockerfile
     region: oregon
     envVars:
@@ -32,6 +34,7 @@ services:
   - type: web
     name: frontend-next
     env: docker
+    plan: free
     dockerfilePath: ./public/Dockerfile
     region: oregon
     dockerCommand: sh -c "npm start"
