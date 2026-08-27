@@ -35,7 +35,7 @@ services:
     dockerfilePath: ./public/Dockerfile
     region: oregon
     dockerCommand: sh -c "npm start"
-    dockerBuildArgs:
+    envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
