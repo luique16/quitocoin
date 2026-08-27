@@ -19,7 +19,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
-		ServerPort:  getEnv("SERVER_PORT", "8080"),
+		ServerPort:  getEnv("PORT", getEnv("SERVER_PORT", "8080")),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
 		RedisURL:    getEnv("REDIS_URL", "localhost:6379"),
 	}

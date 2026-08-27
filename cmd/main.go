@@ -52,9 +52,14 @@ func main() {
 	blockRepo := block.NewRepository(client)
 	blockService := block.NewService(3, blockRepo)
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: cfg.RedisURL,
-	})
+	var rdb *redis.Client
+	if opts, err := redis.ParseURL(cfg.RedisURL); err == nil {
+		rdb = redis.NewClient(opts)
+	} else {
+		rdb = redis.NewClient(&redis.Options{
+			Addr: cfg.RedisURL,
+		})
+	}
 	defer rdb.Close()
 
 	memPoolRepo := transaction.NewRepository(rdb)
